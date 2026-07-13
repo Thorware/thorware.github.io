@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width,initial-scale=1.0">
+	<title>Thorware</title>
+	<style>
+		body{ margin:0; padding:0; background-color:black;
+			display:flex; justify-content:center; align-items:center;
+			height:100vh;width:100vw; overflow:hidden; }
+		.red-square{width:150px;height:150px; background-color:red; cursor:pointer;}
+		.blue-circle{background-color:blue; border-radius:50%; transform:scale(1.2);}
+	</style>
+</head>
+<body>
+	<div class="red-square" id="target" onclick="this.classList.toggle('blue-circle')"></div>
+</body>
+</html>
