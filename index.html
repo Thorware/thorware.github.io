@@ -31,7 +31,7 @@
       guy.classList.toggle('help',help); if(clickGuy) return;
       box=guy.getBoundingClientRect(); centerX=box.left+box.width/2;
       col=clamp(col+(e.clientX<centerX?-1:1),0,4); guy.style.gridColumn=col+1; });
-/*
+/* 
     document.addEventListener('touchstart',function(event){if(event.touches.length>1) event.preventDefault();},{passive:false});
     lastTouchEnd=0;
     document.addEventListener('touchend',function(event){ now=(new Date()).getTime();
