@@ -13,7 +13,7 @@
     .field{ display:grid; background-color:black;
       width:var(--field-size); height:var(--field-size); aspect-ratio:1/1;
       grid-template-columns:repeat(5,1fr); grid-template-rows:repeat(5,1fr); margin:auto; }
-    .player{background-color:pink; width:100%; height:100%; grid-row:3; grid-column:3; position:relative; container-type:inline-size;}
+    .player{background-color:yellow; width:100%; height:100%; grid-row:3; grid-column:3; position:relative; container-type:inline-size;}
     .arrow{position:absolute; display:none; background-color:#dddddd; width:16cqw;height:40cqw;}
     .player.help .arrow{display:block;}
     .arrow.left{top:50%; left:4cqw; transform:translateY(-50%); clip-path: polygon(0% 50%,100% 0%,100% 100%);}
@@ -26,8 +26,8 @@
   </div></div>
   <script> cap=(x,c)=>Math.min(x,c); base=(x,c)=>Math.max(x,c); clamp=(x,a,b)=>Math.min(Math.max(x,a),b);
     col=parseInt(getComputedStyle(guy).gridColumnStart)-1; help=false;
-    document.body.addEventListener('pointerdown', (e)=>{ e.preventDefault();
-      clickGuy=guy.contains(e.target); clickGuy?help=!help:help=false;
+    document.body.addEventListener('pointerdown', (e)=>{ if(!e.isPrimary || e.button > 0) return;
+      e.preventDefault(); clickGuy=guy.contains(e.target); clickGuy?help=!help:help=false;
       guy.classList.toggle('help',help); if(clickGuy) return;
       box=guy.getBoundingClientRect(); boxCenter=box.left+box.width/2;
       col=clamp(col+(e.clientX<boxCenter?-1:1),0,4); guy.style.gridColumn=col+1; });
@@ -42,12 +42,9 @@
       lastTouchEnd = now;
     }, false);
 
-    // Prevent pinch-to-zoom gesture
-    document.addEventListener('touchstart', function (event) {
-      if (event.touches.length > 1) {
-        event.preventDefault();
-      }
-    }, { passive: false });
+    document.addEventListener('touchstart',function(event){
+      if(event.touches.length > 1) event.preventDefault(); },{passive:false});
+    document.addEventListener('touchmove',(e)=>{e.preventDefault();},{passive:false});
 
 
     function resizeGame() { window.scrollTo(0,0);
@@ -58,25 +55,20 @@
       document.body.style.width=`${width}px`;
       document.body.style.height=`${height}px`;
   
-      // Choose the smaller dimension and leave a small buffer (85%)
       const size = Math.min(width, height);
       document.documentElement.style.setProperty('--field-size', `${size}px`);
     }
 
     // Run on load and whenever orientation/window size changes
-    window.addEventListener('resize', resizeGame);
-    if (window.visualViewport) {
+    window.addEventListener('resize',resizeGame);
+    if(window.visualViewport){
       window.visualViewport.addEventListener('resize', resizeGame);
       window.visualViewport.addEventListener('scroll', resizeGame);
     }
-    window.addEventListener('orientationchange', () => {
-      resizeGame();
+    window.addEventListener('orientationchange',()=>{ resizeGame();
       [100,250,400,600].forEach(delay=>{setTimeout(resizeGame,delay);}); });
 
-    // Initial call
     resizeGame();
-
-    document.addEventListener('touchmove',(e)=>{e.preventDefault();}, {passive:false});
 
   </script>
 </body>
