@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Thorware</title>
+  <style> *{box-sizing:border-box; margin:0; padding:0;}
+    body{ background-color:#111111; width:100vw;height:100vh; display:flex; justify-content:center; align-items:center;
+      overflow:hidden; user-select:none; cursor:pointer; }
+    .field{ display:grid; background-color:black; width:100vw;height:100vh; max-width:100vh;max-height:100vw; aspect-ratio:1/1;
+      grid-template-columns:repeat(5,1fr); grid-template-rows:repeat(5,1fr); }
+    .player{background-color:red; width:100%; height:100%; grid-row:3; grid-column:3; position:relative; container-type:inline-size;}
+    .arrow{position:absolute; display:none; background-color:#dddddd; width:16cqw;height:40cqw;}
+    .player.help .arrow{display:block;}
+    .arrow.left{top:50%; left:4cqw; transform:translateY(-50%); clip-path: polygon(0% 50%,100% 0%,100% 100%);}
+    .arrow.right{top:50%; right:4cqw; transform:translateY(-50%); clip-path: polygon(0% 0%,100% 50%,0% 100%);}
+  </style>
+</head>
+<body>
+  <div class="field"><div id="guy" class="player">
+    <div class="arrow left"></div><div class="arrow right"></div>
+  </div></div>
+  <script> cap=(x,c)=>Math.min(x,c); base=(x,c)=>Math.max(x,c); clamp=(x,a,b)=>Math.min(Math.max(x,a),b);
+    col=parseInt(getComputedStyle(guy).gridColumnStart)-1; help=false;
+    document.addEventListener('click', (e)=>{ clickGuy=guy.contains(e.target); clickGuy?help=!help:help=false;
+      guy.classList.toggle('help',help); if(clickGuy) return;
+      box=guy.getBoundingClientRect(); boxCenter=box.left+box.width/2;
+      col=clamp(col+(e.clientX<boxCenter?-1:1),0,4); guy.style.gridColumn=col+1; });
+  </script>
+</body>
+</html>
