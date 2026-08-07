@@ -1,50 +1,71 @@
 <!DOCTYPE html>
 <html lang="en">
 <head> <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum_scale=1.0, user_scalabe=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalabe=no, viewport-fit=cover">
   <title>Thorware</title>
-  <style> *{box-sizing:border-box; margin:0; padding:0;}
+  <style> *,*::before,*::after{box-sizing:border-box; margin:0; padding:0; -webkit-user-drag:none;-webkit-touch-callout:none;}
+    :root{--playerColor:red;}
     html{width:100%;height:100%; margin:0; padding:0; overflow:hidden; background-color:#111111;}
-    body{ background-color:#111111; margin:0; padding:0;
-      display:flex; justify-content:center; align-items:center;
-      position:absolute; top:0; left:0;
-      overflow:hidden; user-select:none; cursor:pointer; overscroll-behavior:none; touch-action:none;
-      -webkit-tap-highlight-color:transparent; }
+    body{ background-color:#111111; margin:0; padding:0; display:flex; justify-content:center; align-items:center;
+      position:absolute; top:0; left:0; overflow:hidden; user-select:none; cursor:pointer; overscroll-behavior:none;
+      touch-action:none;
+      -webkit-tap-highlight-color:transparent; -webkit-user-select:none; -webkit-touch-callout:none; -webkit-user-drag:none; }
     .field{ display:grid; background-color:black;
-      width:var(--field-size); height:var(--field-size); aspect-ratio:1/1;
-      grid-template-columns:repeat(5,1fr); grid-template-rows:repeat(5,1fr); margin:auto; }
-    .player{background-color:red; width:100%; height:100%; grid-row:3; grid-column:3; position:relative; container-type:inline-size;}
-    .arrow{position:absolute; display:none; background-color:#dddddd; width:16cqw;height:40cqw;}
+      width:var(--bounds);height:var(--bounds); aspect-ratio:1/1;
+      grid-template-columns:repeat(var(--gridDim),1fr); grid-template-rows:repeat(var(--gridDim),1fr); margin:auto; }
+    .player{ background-color:var(--playerColor); width:100%;height:100%; grid-row:4;grid-column:4;
+      position:relative; container-type:inline-size; }
+    .arrow{position:absolute; display:none; background-color:#dddddd;}
+    .arrow.horiz{width:12cqw;height:40cqw;} .arrow.vert{width:40cqw;height:12cqw;}
+    .arrow.horiz.left{top:50%; left:4cqw; transform:translateY(-50%); clip-path:polygon(0% 50%,100% 0%,100% 100%);}
+    .arrow.horiz.right{top:50%; right:4cqw; transform:translateY(-50%); clip-path:polygon(0% 0%,100% 50%,0% 100%);}
+    .arrow.vert.up{left:50%; top:4cqw; transform:translateX(-50%); clip-path:polygon(50% 0%,0% 100%, 100% 100%);}
+    .arrow.vert.down{left:50%; bottom:4cqw; transform:translateX(-50%); clip-path:polygon(50% 100%,0% 0%, 100% 0%);}
     .player.help .arrow{display:block;}
-    .arrow.left{top:50%; left:4cqw; transform:translateY(-50%); clip-path: polygon(0% 50%,100% 0%,100% 100%);}
-    .arrow.right{top:50%; right:4cqw; transform:translateY(-50%); clip-path: polygon(0% 0%,100% 50%,0% 100%);}
   </style>
 </head>
 <body>
   <div class="field"><div id="guy" class="player">
-    <div class="arrow left"></div><div class="arrow right"></div>
+    <div class="arrow horiz left"></div><div class="arrow horiz right"></div>
+    <div class="arrow vert up"></div><div class="arrow vert down"></div>
   </div></div>
   <script> cap=(x,c)=>Math.min(x,c); base=(x,c)=>Math.max(x,c); clamp=(x,a,b)=>Math.min(Math.max(x,a),b);
-    col=parseInt(getComputedStyle(guy).gridColumnStart)-1; help=false;
-    document.body.addEventListener('pointerdown', (e)=>{ if(!e.isPrimary || e.button > 0) return;
-      e.preventDefault(); clickGuy=guy.contains(e.target); clickGuy?help=!help:help=false;
-      guy.classList.toggle('help',help); if(clickGuy) return;
-      box=guy.getBoundingClientRect(); centerX=box.left+box.width/2;
-      col=clamp(col+(e.clientX<centerX?-1:1),0,4); guy.style.gridColumn=col+1; }); 
-    document.addEventListener('touchstart',function(event){if(event.touches.length>1) event.preventDefault();},{passive:false});
-    lastTouchEnd=0;
-    document.addEventListener('touchend',function(event){ now=(new Date()).getTime();
-      if(now-lastTouchEnd<=300){event.preventDefault();} lastTouchEnd=now; },false);
-    document.addEventListener('touchmove',(e)=>{e.preventDefault();},{passive:false});
+    input={type:null,key:null,dirX:0,dirY:0,delay:null,repeat:null,targX:0,targY:0,pointerId:null};
+    function beginInput(stepFn){ const DAS_MS=120; const ARR_MS=140;
+      stepFn(); input.delay=setTimeout(()=>{input.repeat=setInterval(stepFn,ARR_MS);},DAS_MS); }
+    function stopInput(){ clearTimeout(input.delay); clearInterval(input.repeat); input.delay=null;input.repeat=null;
+      input.type=null; input.key=null;input.dirX=0;dirY=0;input.targX=0;targY=0;input.pointerId=null; }
+    function kbStep(){move(input.dirX,input.dirY);}
+    function pStep(){ box=guy.getBoundingClientRect(); s=box.width; h=s/2; cx=box.left+h;cy=box.top+h;
+      vx=input.targX-cx;vy=input.targY-cy; ax=Math.abs(vx); ay=Math.abs(vy); halfW=box.width/2;
+      if(ax<=halfW&&ay<halfW) return; ax>=ay?move(vx<0?-1:1,0):move(0,vy<0?-1:1); }
+    function move(dx,dy){help=false;dHelp(); myX=clamp(myX+dx,0,gridDim-1); myY=clamp(myY+dy,0,gridDim-1); dPlayerPos();}
+    function dGridDim(){document.documentElement.style.setProperty('--gridDim',gridDim);}
+    function dPlayerPos(){guy.style.gridColumn=myX+1;guy.style.gridRow=myY+1;}
+    function dHelp(){guy.classList.toggle('help',help);}
+    gridDim=7;dGridDim(); myX=Math.trunc(gridDim/2);myY=myX;dPlayerPos(); help=false;
+    document.body.addEventListener('pointerdown',(e)=>{ if(e.button>0)return; e.preventDefault(); stopInput();
+      box=guy.getBoundingClientRect(); x=e.clientX;y=e.clientY;
+      clickGuy= x>=box.left&&x<=box.right&&y>=box.top&&y<=box.bottom; if(clickGuy){help=!help;dHelp();return;}
+      input.pointerId=e.pointerId; input.type='p'; input.targX=e.clientX;input.targY=e.clientY; beginInput(pStep); });
+    document.body.addEventListener('pointermove',(e)=>{ if(e.pointerType=='mouse'&&e.buttons==0)return;
+      if(e.pointerId==input.pointerId){input.targX=e.clientX;input.targY=e.clientY;} });
+    document.body.addEventListener('pointerup',(e)=>{if(input.type=='p'&&e.pointerId==input.pointerId)stopInput();});
+    document.body.addEventListener('pointercancel',(e)=>{if(input.type=='p'&&e.pointerId==input.pointerId)stopInput();});
+    document.body.addEventListener('touchstart',(e)=>{e.preventDefault();},{passive:false});
+    window.addEventListener('keydown',(e)=>{ if(e.repeat)return; dx=0;dy=0;
+      if(e.key=='ArrowRight'||e.key=='d'||e.key=='D')dx=1; if(e.key=='ArrowLeft'||e.key=='a'||e.key=='A')dx=-1;
+      if(e.key=='ArrowUp'||e.key=='w'||e.key=='W')dy=-1; if(e.key=='ArrowDown'||e.key=='s'||e.key=='S')dy=1;
+      if(dx==0&&dy==0)return; stopInput(); input.type='k'; input.key=e.key; input.dirX=dx;input.dirY=dy; beginInput(kbStep); });
+    window.addEventListener('keyup',(e)=>{if(input.type=='k'&&input.key==e.key)stopInput();});
     function resize(){ window.scrollTo(0,0); vv=window.visualViewport;
       width=vv?vv.width:document.documentElement.clientWidth; height=vv?vv.height:document.documentElement.clientHeight;
       document.body.style.width=`${width}px`; document.body.style.height=`${height}px`;
-      size=Math.min(width,height); document.documentElement.style.setProperty('--field-size', `${size}px`); }
+      bounds=Math.min(width,height); document.documentElement.style.setProperty('--bounds', `${bounds}px`); }
+    window.addEventListener('blur',()=>{stopInput();})
     window.addEventListener('resize',resize); if(window.visualViewport){
       window.visualViewport.addEventListener('resize', resize);
       window.visualViewport.addEventListener('scroll', resize); }
-    window.addEventListener('orientationchange',()=>{ resize();
-      [100,250,400,600].forEach(delay=>{setTimeout(resize,delay);}); });
     resize();
   </script>
 </body>
