@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head> <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalabe=no, viewport-fit=cover">
+  <title>Thorware</title>
+  <style> *,*::before,*::after{box-sizing:border-box; margin:0; padding:0; -webkit-user-drag:none;-webkit-touch-callout:none;}
+    :root{--playerColor:red;}
+    html{width:100%;height:100%; margin:0; padding:0; overflow:hidden; background-color:#111;}
+    body{ background-color:#111; margin:0; padding:0; display:flex; justify-content:center; align-items:center;
+      position:absolute; top:0; left:0; overflow:hidden; user-select:none; cursor:pointer; overscroll-behavior:none;
+      touch-action:none;
+      -webkit-tap-highlight-color:transparent; -webkit-user-select:none; -webkit-touch-callout:none; -webkit-user-drag:none; }
+    .field{ display:grid; background-color:black;
+      width:var(--bounds);height:var(--bounds); aspect-ratio:1/1;
+      grid-template-columns:repeat(var(--gridDim),1fr); grid-template-rows:repeat(var(--gridDim),1fr); margin:auto; }
+    .player{background-color:var(--playerColor); width:100%;height:100%; position:relative; container-type:inline-size;}
+    .wall{background-color:#444; width:100%;height:100%; position:relative; container-type:inline-size;}
+    .arrow{position:absolute; display:none; background-color:#ddd;}
+    .arrow.horiz{width:12cqw;height:40cqw;} .arrow.vert{width:40cqw;height:12cqw;}
+    .arrow.horiz.left{top:50%; left:4cqw; transform:translateY(-50%); clip-path:polygon(0% 50%,100% 0%,100% 100%);}
+    .arrow.horiz.right{top:50%; right:4cqw; transform:translateY(-50%); clip-path:polygon(0% 0%,100% 50%,0% 100%);}
+    .arrow.vert.up{left:50%; top:4cqw; transform:translateX(-50%); clip-path:polygon(50% 0%,0% 100%, 100% 100%);}
+    .arrow.vert.down{left:50%; bottom:4cqw; transform:translateX(-50%); clip-path:polygon(50% 100%,0% 0%, 100% 0%);}
+    .player.help .arrow{display:block;}
+  </style>
+</head>
+<body>
+  <div id="land" class="field"><div id="guy" class="player">
+    <div class="arrow horiz left"></div><div class="arrow horiz right"></div>
+    <div class="arrow vert up"></div><div class="arrow vert down"></div>
+  </div></div>
+  <script> input={type:null,key:null,dirX:0,dirY:0,delay:null,repeat:null,targX:0,targY:0,pointerId:null}; obj=[];
+    function startInputTimers(das,arr)
+      {input.delay=setTimeout(()=>{input.repeat=setInterval(input.stepFn,arr);input.stepFn();},das);}
+    function beginInput(stepFn,das,arr){input.stepFn=stepFn; startInputTimers(das,arr); stepFn();}
+    function stopInput(){ clearTimeout(input.delay);clearInterval(input.repeat); input.delay=null;input.repeat=null;
+      input.type=null; input.key=null;input.dirX=0;dirY=0;input.targX=0;input.targY=0;input.pointerId=null; }
+    function hitchInput()
+      {if(input.type=='k')return; clearTimeout(input.delay);clearInterval(input.repeat); startInputTimers(200,130);}
+    function tryMove(dx,dy){if(blocked(myX+dx,myY+dy))return false; move(dx,dy); return true;}
+    function kbStep(){tryMove(input.dirX,input.dirY);}
+    function pStep(){ box=guy.getBoundingClientRect(); s=box.width; h=s/2; cx=box.left+h;cy=box.top+h;
+      vx=input.targX-cx;vy=input.targY-cy; ax=Math.abs(vx); ay=Math.abs(vy); dx=vx<0?-1:1;dy=vy<0?-1:1;
+      if(ax<=h&&ay<=h)return; card=ax<=h||ay<=h; vert=ay>ax;
+      if(vert){if(!tryMove(0,dy)&&!card) tryMove(dx,0);} else if(!tryMove(dx,0)&&!card) tryMove(0,dy); }
+    function move(dx,dy){ help=false;dHelp(); myX+=dx;myY+=dy; dPlayerPos(); end=gridDim-1; edge=false;
+      if(myX<0||dx&&myX==0){edge=true;myX=end;--room;} else if(myY<0||dy&&myY==0){edge=true;myY=end;room-=3;}
+      else if(myX>end||dx&&myX==end){edge=true;myX=0;++room;} else if(myY>end||dy&&myY==end){edge=true;myY=0;room+=3;}
+      if(edge)newRoom(); }
+    function dGridDim(){document.documentElement.style.setProperty('--gridDim',gridDim);}
+    function dPlayerPos(){guy.style.gridColumn=myX+1;guy.style.gridRow=myY+1;}
+    function dHelp(){guy.classList.toggle('help',help);}
+    function blocked(x,y){for(o of obj){if(o.x==x&&o.y==y)return true;} return false;}
+    function makeWall(x,y){ obj.push({x:x,y:y}); wall=document.createElement('div'); wall.className='wall';
+      wall.style.gridColumn=x+1; wall.style.gridRow=y+1; land.appendChild(wall); }
+    function makeLeftWall(){for(i=0;i<gridDim;++i)makeWall(0,i);}
+    function makeRightWall(){for(i=0;i<gridDim;++i)makeWall(gridDim-1,i);}
+    function makeTopWall(){for(i=0;i<gridDim;++i)makeWall(i,0);}
+    function makeBotWall(){for(i=0;i<gridDim;++i)makeWall(i,gridDim-1);}
+    function makeGuy(){ player=document.createElement('div'); player.className='player'; player.id='guy';
+      land.appendChild(player); dPlayerPos(); }
+    function newRoom(){ hitchInput(); obj=[]; land.replaceChildren(); makeGuy();
+      if(room%3==0)makeLeftWall(); if(room<3)makeTopWall(); if(room>=6)makeBotWall();if(room%3==2)makeRightWall(); }
+    gridDim=5;dGridDim(); myX=Math.trunc(gridDim/2);myY=myX;dPlayerPos(); room=4; help=false;
+    document.body.addEventListener('pointerdown',(e)=>{ if(e.button>0)return; e.preventDefault(); stopInput();
+      box=guy.getBoundingClientRect(); x=e.clientX;y=e.clientY;
+      clickGuy= x>=box.left&&x<=box.right&&y>=box.top&&y<=box.bottom; if(clickGuy){help=!help;dHelp();return;}
+      input.pointerId=e.pointerId; input.type='p'; input.targX=e.clientX;input.targY=e.clientY; beginInput(pStep,360,130); });
+    document.body.addEventListener('pointermove',(e)=>{ if(e.pointerType=='mouse'&&e.buttons==0)return;
+      if(e.pointerId==input.pointerId){input.targX=e.clientX;input.targY=e.clientY;} });
+    document.body.addEventListener('pointerup',(e)=>{if(input.type=='p'&&e.pointerId==input.pointerId)stopInput();});
+    document.body.addEventListener('pointercancel',(e)=>{if(input.type=='p'&&e.pointerId==input.pointerId)stopInput();});
+    document.body.addEventListener('touchstart',(e)=>{e.preventDefault();},{passive:false});
+    window.addEventListener('keydown',(e)=>{ if(e.repeat)return; dx=0;dy=0;
+      if(e.key=='ArrowRight'||e.key=='d'||e.key=='D')dx=1; if(e.key=='ArrowLeft'||e.key=='a'||e.key=='A')dx=-1;
+      if(e.key=='ArrowUp'||e.key=='w'||e.key=='W')dy=-1; if(e.key=='ArrowDown'||e.key=='s'||e.key=='S')dy=1;
+      if(dx==0&&dy==0)return; stopInput();
+      input.type='k'; input.key=e.key; input.dirX=dx;input.dirY=dy; beginInput(kbStep,240,120); });
+    window.addEventListener('keyup',(e)=>{if(input.type=='k'&&input.key==e.key)stopInput();});
+    function resize(){ window.scrollTo(0,0); vv=window.visualViewport;
+      width=vv?vv.width:document.documentElement.clientWidth; height=vv?vv.height:document.documentElement.clientHeight;
+      document.body.style.width=`${width}px`; document.body.style.height=`${height}px`;
+      bounds=Math.min(width,height); document.documentElement.style.setProperty('--bounds', `${bounds}px`); }
+    window.addEventListener('blur',()=>{stopInput();})
+    window.addEventListener('resize',resize); if(window.visualViewport){
+      window.visualViewport.addEventListener('resize', resize);
+      window.visualViewport.addEventListener('scroll', resize); }
+    resize();
+  </script>
+</body>
+</html>
