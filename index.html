@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head> <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no
+    , viewport-fit=cover">
+  <title>Thorware</title>
+  <style> *{box-sizing:border-box; margin:0; padding:0; -webkit-user-drag:none;-webkit-touch-callout:none;}
+    :root{--guyColor:red;--coinColor:yellow;}
+    html{width:100%;height:100%; overflow:hidden; background-color:#111;}
+    body{ background-color:#111; display:flex;justify-content:center;align-items:center; position:absolute;
+      top:0; left:0; overflow:hidden; user-select:none; cursor:pointer; overscroll-behavior:none; touch-action:none;
+      -webkit-tap-highlight-color:transparent; -webkit-user-select:none; }
+    #land{ display:grid; background-color:black;
+      width:var(--bounds);height:var(--bounds); aspect-ratio:1/1; place-items:center;
+      grid-template-columns:repeat(var(--gridDim),1fr); grid-template-rows:repeat(var(--gridDim),1fr); margin:auto; }
+    #guy{background-color:var(--guyColor); width:100%;height:100%; position:relative; container-type:inline-size;}
+    .arrow{ display:none; position:absolute; background-color:#ddd; width:40cqw;height:12cqw; top:50%;left:50%;
+      clip-path:polygon(50% 0%,0 100%, 100% 100%);
+      transform:translate(-50%,-50%) rotate(var(--r)) translateY(-40cqw); }
+    .arrow.up{--r:0deg;} .arrow.right{--r:90deg;} .arrow.down{--r:180deg;} .arrow.left{--r:270deg;}
+    #guy.help .arrow{display:block;}
+    #hands{ position:absolute; bottom:0;left:50%; transform:translateX(-50%); width:25%;height:100%;
+      display:flex;flex-direction:column-reverse; }
+    .slot{background:yellow; flex:1; visibility:hidden;} .slot.on{visibility:visible;}
+    .tile{ width:100%;height:100%; position:relative; container-type:inline-size;
+      background-color:var(--tileColor); outline:1px solid var(--tileColor); outline-offset:-0.5px }
+    .wall{--tileColor:#444;}
+    .coin{background-color:var(--coinColor); width:50%;height:50%;}
+    .gate{ width:85%;height:85%;
+      background:linear-gradient(var(--coinColor),var(--coinColor)) center / 100% 100% no-repeat;
+      mask:linear-gradient(black 0 0) content-box, linear-gradient(black 0 0);
+      mask-composite: exclude; padding: 10%; box-sizing: border-box; }
+  </style>
+</head>
+<body>
+  <template id="guyMold"><div id="guy">
+    <div class="arrow left"></div><div class="arrow right"></div>
+    <div class="arrow up"></div><div class="arrow down"></div>
+    <div id="hands">
+      <div class="slot"></div><div class="slot"></div><div class="slot"></div><div class="slot"></div>
+    </div>
+  </div></template>
+  <div id="land"></div>
+  <script> const {min,abs}=Math;
+    function startInputTimers(das,arr)
+      {input.delay=setTimeout(()=>{input.repeat=setInterval(input.stepFn,arr);input.stepFn();},das);}
+    function beginInput(stepFn,das,arr){input.stepFn=stepFn; startInputTimers(das,arr); stepFn();}
+    function stopInput(){ const i=input; clearTimeout(i.delay);clearInterval(i.repeat); i.delay=null;i.repeat=null;
+      i.type=null; i.key=null; i.dirX=0;i.dirY=0; i.targX=0;i.targY=0; i.pointerId=null; }
+    function hitchInput()
+      {if(input.type=='k')return; clearTimeout(input.delay);clearInterval(input.repeat); startInputTimers(200,130);}
+    function tryMove(dx,dy){if(blocked(myX+dx,myY+dy))return false; move(dx,dy); return true;}
+    function kbStep(){tryMove(input.dirX,input.dirY);}
+    function pStep(){ box=guy.getBoundingClientRect(); s=box.width; h=s/2; cx=box.left+h;cy=box.top+h;
+      vx=input.targX-cx;vy=input.targY-cy; ax=abs(vx); ay=abs(vy); dx=vx<0?-1:1;dy=vy<0?-1:1;
+      if(ax<=h&&ay<=h)return; card=ax<=h||ay<=h; vert=ay>ax;
+      if(vert){if(!tryMove(0,dy)&&!card) tryMove(dx,0);} else if(!tryMove(dx,0)&&!card) tryMove(0,dy); }
+    function move(dx,dy){ if(help)help=false,dHelp(); myX+=dx;myY+=dy; dGuyPos(); end=gridDim-1; edge=false;
+      if(myX<0||dx&&myX==0){edge=true;myX=end;--room;} else if(myY<0||dy&&myY==0){edge=true;myY=end;room-=3;}
+      else if(myX>end||dx&&myX==end){edge=true;myX=0;++room;} else if(myY>end||dy&&myY==end){edge=true;myY=0;room+=3;}
+      if(edge)newRoom();
+      for(o of obj)if((o.t=='c'||o.t=='g')&& myX==o.x&& myY==o.y){ o.el.remove();o.el=null;
+        obj.splice(obj.indexOf(o),1); if(o.t=='c')++slotsUsed; if(o.t=='g')slotsUsed=0; dCoins();
+        got.push({r:room,x:myX,y:myY}); }}
+    function dGridDim(){document.documentElement.style.setProperty('--gridDim',gridDim);}
+    function dGuyPos(){guy.style.gridColumn=myX+1;guy.style.gridRow=myY+1;}
+    function dHelp(){guy.classList.toggle('help',help);}
+    function dCoins(){ c=document.querySelectorAll('#hands .slot');
+      for(i=0;i<4;++i)c[i].classList.toggle('on',i<slotsUsed); }
+    function blocked(x,y){return obj.some(o=>(o.t=='w'||o.t=='g'&&slotsUsed<4)&&o.x==x&&o.y==y);}
+    function make(t,x,y){ el=document.createElement('div');
+      el.className=t=='w'?'tile wall':t=='c'?'coin':t=='g'?'gate':'';
+      el.style.gridColumn=x+1; el.style.gridRow=y+1; land.appendChild(el); obj.push({t,x,y,el});  }
+    function makeLeftWall(){for(i=0;i<gridDim;++i)make('w',0,i);}
+    function makeRightWall(){for(i=0;i<gridDim;++i)make('w',gridDim-1,i);}
+    function makeTopWall(){for(i=0;i<gridDim;++i)make('w',i,0);}
+    function makeBotWall(){for(i=0;i<gridDim;++i)make('w',i,gridDim-1);}
+    function makeGuy(){land.appendChild(guyMold.content.cloneNode(true)); dGuyPos();dCoins();}
+    function newRoom(){ hitchInput(); outgrowHelp=true; obj=[]; land.replaceChildren();
+      s=roomCodes[room]; newDim=+s.slice(0,2);
+      if(newDim!=gridDim){ mx=myX==0,my=myY==0;
+        if(myX==gridDim-1)myX=newDim-1,mx=true; if(myY==gridDim-1)myY=newDim-1,my=true;
+        d=newDim-gridDim; h=d/2; if(mx)myY+=h; if(my)myX+=h; gridDim=newDim,dGridDim(); }
+      s=s.slice(2); end=gridDim-1; x=y=0; autoW=false;
+      for(c of s){ m=false; switch(c){ case'U':makeTopWall();break; case'D':makeBotWall();break;
+          case'L':makeLeftWall();break; case'R':makeRightWall();break;
+          case'1':x=y=0;break; case'2':x=end,y=0;break; case'3':x=0,y=end;break; case'4':x=y=end;break;
+          case'u':--y;m=true;break; case'd':++y;m=true;break; case'l':--x;m=true;break; case'r':++x;m=true;break;
+          case'W':autoW=!autoW;if(autoW)m=true;break; case'w':make('w',x,y);break;
+          case'c':case 'g':if(!got.some(g=>g.r==room&&g.x==x&&g.y==y)) make(c,x,y);break; }
+        if(autoW&& m)make('w',x,y); }
+      makeGuy(); }
+
+    roomCodes=[
+    "","","09LRU3rWrrWrrWrr"
+    ,"05LU1rrdc","05U","05R1WrddWrgrWuu"
+    ,"05L","05","05R"
+    ,"05DL3ruuucrrddc","05D","05DR4luuc"];
+
+    input={type:null,key:null,dirX:0,dirY:0,delay:null,repeat:null,targX:0,targY:0,pointerId:null}; obj=[];got=[];
+    gridDim=5;dGridDim(); slotsUsed=0; myX=(gridDim/2)|0;myY=myX;makeGuy();
+    room=7; help=false;outgrowHelp=false; resize();
+
+    document.body.addEventListener('pointerdown',(e)=>{ if(e.button>0)return; e.preventDefault(); stopInput();
+      box=guy.getBoundingClientRect(); x=e.clientX;y=e.clientY;
+      clickGuy= x>=box.left&&x<=box.right&&y>=box.top&&y<=box.bottom;
+      if(clickGuy&&!outgrowHelp){help=!help,dHelp();}
+      input.pointerId=e.pointerId; input.type='p'; input.targX=e.clientX;input.targY=e.clientY;
+      beginInput(pStep,360,130); });
+    document.body.addEventListener('pointermove',(e)=>{ if(e.pointerType=='mouse'&&e.buttons==0)return;
+      if(e.pointerId==input.pointerId){input.targX=e.clientX;input.targY=e.clientY;} });
+    document.body.addEventListener('pointerup',(e)=>{if(input.type=='p'&&e.pointerId==input.pointerId)stopInput();});
+    document.body.addEventListener('pointercancel',(e)=>{
+      if(input.type=='p'&&e.pointerId==input.pointerId)stopInput(); });
+    document.body.addEventListener('touchstart',(e)=>{e.preventDefault();},{passive:false});
+    window.addEventListener('keydown',(e)=>{ if(e.repeat)return; dx=0;dy=0;
+      if(e.key=='ArrowRight'||e.key=='d'||e.key=='D')dx=1; if(e.key=='ArrowLeft'||e.key=='a'||e.key=='A')dx=-1;
+      if(e.key=='ArrowUp'||e.key=='w'||e.key=='W')dy=-1; if(e.key=='ArrowDown'||e.key=='s'||e.key=='S')dy=1;
+      if(dx==0&&dy==0)return; stopInput();
+      input.type='k'; input.key=e.key; input.dirX=dx;input.dirY=dy; beginInput(kbStep,240,120); });
+    window.addEventListener('keyup',(e)=>{if(input.type=='k'&&input.key==e.key)stopInput();});
+    function resize(){ window.scrollTo(0,0); vv=window.visualViewport;
+      width=vv?vv.width:document.documentElement.clientWidth;
+      height=vv?vv.height:document.documentElement.clientHeight;
+      document.body.style.width=`${width}px`; document.body.style.height=`${height}px`;
+      bounds=min(width,height); document.documentElement.style.setProperty('--bounds', `${bounds}px`); }
+    window.addEventListener('blur',()=>{stopInput();})
+    window.addEventListener('resize',resize); if(window.visualViewport){
+      window.visualViewport.addEventListener('resize',resize);
+      window.visualViewport.addEventListener('scroll',resize); }
+  </script>
+</body>
+</html>
