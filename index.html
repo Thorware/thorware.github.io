@@ -110,18 +110,13 @@
       if(c=='T')dx=1; else if(c=='L')dy=1; else if(c=='B')y=end,dx=1; else if(c=='R')x=end,dy=1;
       for(i=0;i<=end;++i,x+=dx,y+=dy)if(abs(mid-i)>=gap)makeBasic('w','tile wall',x,y); }
     function makeGuy(){land.appendChild(guyMold.content.cloneNode(true)); dGuyPos();dHands();}
+    function makePart(name,dad,st){n=makeEl(name),n.style='--coinColor:'+subtypeColors[st],dad.appendChild(n);}
     function makeJoiner(x,y){ n=makeBasic('j','joiner',x,y);n.st1=st1,n.st2=st2;el=n.el;
-      n=makeEl('joinerEl TL'),n.style='--coinColor:'+subtypeColors[st1],el.appendChild(n);
-      n=makeEl('joinerEl TR'),n.style='--coinColor:'+subtypeColors[st1],el.appendChild(n);
-      n=makeEl('joinerEl BL'),n.style='--coinColor:'+subtypeColors[st1],el.appendChild(n);
-      n=makeEl('joinerEl BR'),n.style='--coinColor:'+subtypeColors[st1],el.appendChild(n);
-      n=makeEl('joinerEl MID'),n.style='--coinColor:'+subtypeColors[st2],el.appendChild(n); }
+      makePart('joinerEl TL',el,st1),makePart('joinerEl TR',el,st1),makePart('joinerEl BL',el,st1)
+      ,makePart('joinerEl BR',el,st1),makePart('joinerEl MID',el,st2); }
     function makeSplitter(x,y){ n=makeBasic('s','splitter',x,y);n.st1=st1,n.st2=st2;el=n.el;
-      n=makeEl('splitterEl TL'),n.style='--coinColor:'+subtypeColors[st2],el.appendChild(n);
-      n=makeEl('splitterEl TR'),n.style='--coinColor:'+subtypeColors[st2],el.appendChild(n);
-      n=makeEl('splitterEl BL'),n.style='--coinColor:'+subtypeColors[st2],el.appendChild(n);
-      n=makeEl('splitterEl BR'),n.style='--coinColor:'+subtypeColors[st2],el.appendChild(n);
-      n=makeEl('splitterEl MID'),n.style='--coinColor:'+subtypeColors[st1],el.appendChild(n); }
+      makePart('splitterEl TL',el,st2),makePart('splitterEl TR',el,st2),makePart('splitterEl BL',el,st2)
+      ,makePart('splitterEl BR',el,st2),makePart('splitterEl MID',el,st1); }
     function makeBasic(t,cName,x,y){ el=makeEl(cName);
       el.style.gridColumn=x+1,el.style.gridRow=y+1,land.appendChild(el); return obj[obj.push({t,x,y,el})-1]; }
     function makeFlavor(t,cName,x,y,st){ el=makeEl(cName); el.style='--coinColor:'+subtypeColors[st];
