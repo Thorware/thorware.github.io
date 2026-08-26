@@ -37,13 +37,13 @@
       background-size:38% 38%; background-position:center; background-repeat: no-repeat; }
     .plate.omni{background-color:#bbb;}
     .TL{top:0;left:0;} .TR{top:0;right:0;} .BL{bottom:0;left:0;} .BR{bottom:0;right:0;}
-    .joiner{position:relative; background-color:black; width:97%;height:97%; overflow:hidden;}
-    .joinerEl{position:absolute; width:38%;height:38%; background-color:var(--coinColor);}
-    .joinerEl.MID{ top:50%;left:50%;transform:translate(-50%,-50%);z-index:2; width:60%;height:60%; 
+    .joiner{position:relative; background-color:black; width:70%;height:70%; overflow:hidden;}
+    .joinerEl{position:absolute; width:35%;height:35%; background-color:var(--coinColor);}
+    .joinerEl.MID{ top:50%;left:50%;transform:translate(-50%,-50%);z-index:2; width:80%;height:80%; 
       background-color:var(--coinColor); }
-    .splitter{position:relative; background-color:black; width:97%;height:97%; overflow:hidden;}
-    .splitterEl{position:absolute; width:30%;height:30%; background-color:var(--coinColor); z-index:2;}
-    .splitterEl.MID{top:50%;left:50%;transform:translate(-50%,-50%);z-index:1; width:70%;height:70%;}
+    .splitter{position:relative; background-color:black; width:70%;height:70%; overflow:hidden;}
+    .splitterEl{position:absolute; width:35%;height:35%; background-color:var(--coinColor); z-index:2;}
+    .splitterEl.MID{top:50%;left:50%;transform:translate(-50%,-50%);z-index:1; width:80%;height:80%;}
   </style>
 </head>
 <body>
@@ -123,11 +123,10 @@
       el.style.gridColumn=x+1,el.style.gridRow=y+1,land.appendChild(el); return obj[obj.push({t,st,x,y,el})-1];
     } subtypeColors=['yellow','blue'];
     function isGot(){return-1!=got.findIndex(g=>g.r==room&&g.x==x&&g.y==y);}
-    function newRoom(dx,dy){ hitchInput(),obj=[],land.replaceChildren(),room=clamp(room,0,roomCodes.length-1)
+    function newRoom(dx=0,dy=0){ hitchInput(),obj=[],land.replaceChildren(),room=clamp(room,0,roomCodes.length-1)
       ,s=roomCodes[room],newDim=+s.slice(0,2),end=newDim-1,mid=end/2; if(dx==0&&dy==0)myY=myX=mid;else{
         om=(gridDim-1)/2; if(dx!=0)offY=myY-om,myY=clamp(mid+offY,0,end),myX=dx>0?0:end;
-        else offX=myX-om,myX=clamp(mid+offX,0,end),myY=dy>0?0:end;
-      console.log(myX,myY,dx) }
+        else offX=myX-om,myX=clamp(mid+offX,0,end),myY=dy>0?0:end; }
       gridDim=newDim,dGridDim(); s=s.slice(2); x=y=0; autoW=false;
       for(let i=0;i<s.length;++i){ c=s[i]; m=false; switch(c){
           case'T':case'B':case'L':case'R':gap=+s[++i];makeWalls(c,gap);break;
@@ -144,39 +143,6 @@
           case's':st1=+s[++i],st2=+s[++i];makeSplitter(x,y);break; }
         if(autoW&& m)makeBasic('w','tile wall',x,y); }
       makeGuy(); }
-
-    roomCodes=["05","05","03T0R0L0"
-    ,"09L0T0B2R16ulwdg0dw5s101drp13dlp1","05T0B0L1R11drwrc1rwdg1dwlc1lw"
-      ,"11R0L1T1B22dlWddddWrrWuuuuWlg0dg0dg0dg0dg01ddrrw3ddllw7uurrw9uullw"
-    ,"07B0L0R2T23dlwdlWllddrurdWdc0lc0lc0lc0uj01uc1uc1"
-      ,"11L2T0R09lwlwllWlllllW4ddrg0rWuuuulWuuc0rrddwruj01drWdddldrrddWlllus103dlc05rdc09ulc0"
-      ,"05L0R05s10lp15rp1"
-    ,"09T0L0R4B05s10uullwddddwrrrrwuuuuw","09B1R0L41rWrrrrdWrg0rwuw5rruc1"
-      ,"15B0L0R0T21drwdrdw3dlw7urw9ulw2dddlwdlwdlwdlwdwdwdwdlwdlwuc1ddc18ulllwrc1uwurwuwurwuwuwuwuurrrWddddddWdrw"
-      +"drwrc1ldc18urwrw6lwuwuwuw"
-    ,"07L0T0B05c0","09B0T1L32dlwrg1rw8uc0lc1","09B1T0R09ulc1uc02dlc0lc1"
-    ,"05L0T0B1R19ulwug1uwlc1lwdc1rc1dlw","07T0B0L1R14drWruuWlc1uc1rc1rc1rdwrwdg1lg0dwrwdlc0lc0lc0ruc0"
-      ,"11L1R0T1B31drWrrrWrg1rWrrrW6ldwldc0ldc0lc04rdwrdc0ruc0rdc0ruc0rc0uc0ruc0rc0uulc0lllc0dlc0dlc0rrc0"
-    ,"07L0T12dlwrg0rw5dc06Wddd","09T0R0B11dw7uWuuuW8ulWuuuuWrc0dc0dc0dc1drWuuuu"
-      ,"09T3L0R0B35j01uullwddddwrrrrwuuuuw"
-    ,"07L0R0B05uloddorrouuo","051rWddddWrrWuuuuWdlg0","07L0R0B07urWrrrrullllWup1rrp1rrp1"
-    ,"07T0L0R2B25c1uc1","09L2R2T12dlwrg1rw","07T0R0L2B25c1"
-    ,"07L0R0B0T21rdw3ldw5dlp0rrp0","09L0R0B17ruw9luw5dlc0uulc0rruc0ddrrc0","07L0R0B0T21rdw3ldw5dlp0rrp0"
-    ,"07L0T0B15ulc1","09B0L3T11drWrrWrg0rwrwrrdWdddddWllluc0llc0uuulc0rrrrc0","09T0B0R07uWuuuuurrrrrrddddlllluuW5p1"
-    ,"05L0B0T13ldwlg0lWdd","07T0B0L25lc0","09R0T0L39ulwdwllWllllW3dlw5uc0"
-    ,"09T0L0B01drw7urwrruc0luuc0uurc0rrdc0dlc0drc0","09T0B01ddrrwrrwrrw7uurrwrrwrrw"
-      ,"09R09lwllllWlll1rrrrddruuWrrWddWlg0"
-    ,"07T0L0B09uwuuuWdlllldluWddc03lldwllc0","07T0B03ddWddW9lluwuwuurWllldWddc0llwuuwuw"
-      ,"07R07WrrrWrrw1WrrddrWrg0rw1rdc0rdWlldd"
-    ,"05L0T01rrdc0","05T0","05R01WrrddWrg0"
-    ,"05L0","05","05R0"
-    ,"05B0L07ruuuc0rrddc0","05B0","05B0R09luuc0"];
-    roomSpan=3; startRoom=47; devRoom=0;
-
-    input={type:null,key:null,dirX:0,dirY:0,delay:null,repeat:null,targX:0,targY:0,pointerId:null}; got=[];
-    slotsUsed=0; slots=[-1,-1,-1,-1];
-    dev=devRoom>0; room=(dev?devRoom:startRoom)-1; noclip=false;
-    gridDim=0;newRoom(0,0); help=false;outgrowHelp=false; resize();
 
     document.body.addEventListener('pointerdown',(e)=>{ if(e.button>0)return; e.preventDefault(); stopInput();
       box=guy.getBoundingClientRect(); x=e.clientX;y=e.clientY;
@@ -198,7 +164,8 @@
       if(dev){ if(e.key=='c')slotsUsed=4,slots=[0,0,0,0],dHands();
         if(e.key=='b')slotsUsed=4,slots=[1,1,1,1],dHands();
         if(e.key=='x')slotsUsed=0,slots=[-1,-1,-1,-1],dHands();
-        if(e.key=='n')noclip=!noclip; }});
+        if(e.key==' ')noclip=!noclip;
+      } else{if(e.key=='0')++unlockDev;else unlockDev=0; if(unlockDev==5)dev=noclip=true;} });
     window.addEventListener('keyup',(e)=>{if(input.type=='k'&&input.key==e.key)stopInput();});
     function resize(){ window.scrollTo(0,0); vv=window.visualViewport;
       width=vv?vv.width:document.documentElement.clientWidth;
@@ -209,6 +176,36 @@
     window.addEventListener('resize',resize); if(window.visualViewport){
       window.visualViewport.addEventListener('resize',resize);
       window.visualViewport.addEventListener('scroll',resize); }
-  </script>
-</body>
-</html>
+
+    input={type:null,key:null,dirX:0,dirY:0,delay:null,repeat:null,targX:0,targY:0,pointerId:null}; got=[];
+    slotsUsed=0; slots=[-1,-1,-1,-1]; help=false;outgrowHelp=false; noclip=false; resize();
+
+    roomSpan=3; roomCodes=[
+    "05","05","03T0R0L0",
+    "09L0T0B2R16ulwdg0dw5s101drp13dlp1","05T0B0L1R11drwrc1rwdg1dwlc1lw",
+      "11R0L1T1B22dlWddddWrrWuuuuWlg0dg0dg0dg0dg01ddrrw3ddllw7uurrw9uullw",
+    "07B0L0R2T23dlwdlWllddrurdWdc0lc0lc0lc0uj01uc1uc1",
+      "11L2T0R09lwlwllWlllllW4ddrg0rWuuuulWrrwruj01drWddlWlddwrruWdrddWllus103dlc0lc0dc0rc0",
+      "075s10llp15rrp11rWddlddrddW3lWddrddldd",
+    "09T0L0R4B05s10uullwddddwrrrrwuuuuw","09B1R0L41rWrrrrdWrg0rwuw5rruc1",
+      "15B0L0R0T21drwdw3dlw7urw9ulw2dddlWldWdlwdlwdwdwdwdlwdlwuc1ddc18ulllwrc1uwurwuwurwuwuwuwuurrrWddddddWdrw"
+      +"drwrc1ldc18urwrw6lwuwuwuw",
+    "07L0T0B05c0","09B0T1L32dlwrg1rw8uc0lc1","09B1T0R09ulc1uc02dlc0lc1",
+    "05L0T0B1R19ulwug1uwlc1lwdc1rc1dlw","07T0B0L1R14drWruuWlc1uc1rc1rc1rdwrwdg1lg0dwrwdlc0lc0lc0ruc0",
+      "11L1R0T1B31drWrrrWrg1rWrrrW6ldwldc0ldc0lc04rdwrdc0ruc0rdc0ruc0rc0uc0ruc0rc0uulc0lllc0dlc0dlc0rrc0",
+    "07L0T12dlwrg0rw5dc06Wddd","09T0R0B11dw7uWuuuW8ulWuuuuWrc0dc0dc0dc1drWuuuu",
+      "09T3L0R0B35j01uullwddddwrrrrwuuuuw",
+    "07L0R0B05uloddorrouuo","051rWddddWrrWuuuuWdlg0","07L0R0B07urWrrrrullllWup1rrp1rrp1",
+    "07T0L0R2B25c1uc1","09L2R2T12dlwrg1rw","07T0R0L2B25c1",
+    "07L0R0B0T21rdw3ldw5dlp0rrp0","09L0R0B17ruw9luw5dlc0uulc0rruc0ddrrc0","07L0R0B0T21rdw3ldw5dlp0rrp0",
+    "07L0T0B15ulc1","09B0L3T11drWrrWrg0rwrwrrdWdddddWllluc0llc0uuulc0rrrrc0","09T0B0R07uWuuuuurrrrrrddddlllluuW5p1",
+    "05L0B0T13ldwlg0lWdd","07T0B0L25lc0","09R0T0L39ulwdwllWllllW3dlw5uc0",
+    "09T0L0B01drw7urwrruc0luuc0uurc0rrdc0dlc0drc0","09T0B01ddrrwrrwrrw7uurrwrrwrrw",
+      "09R09lwllllWlll1rrrrddruuWrrWddWlg0",
+    "07T0L0B09uWllW6uWdllllldrWdlc02rdWllWlc0","07T0B06dWuullllddWlc08urwuw7uwuuwuw",
+      "07R07WrrrWrrw1WrrddrWrg0rw1rdc0rdWlldd",
+    "05L0T01rrdc0","05T0","05R01WrrddWrg0",
+    "05L0","05","05R0",
+    "05B0L07ruuuc0rrddc0","05B0","05B0R09luuc0"];
+    startRoom=47; devRoom=0;
+    dev=devRoom>0;room=(dev?devRoom:startRoom)-1;newRoom();</script></body></html>
