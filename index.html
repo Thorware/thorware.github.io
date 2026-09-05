@@ -182,11 +182,14 @@
 
     document.body.addEventListener('pointerdown',(e)=>{ if(e.button>0)return; e.preventDefault(); stopInput();
       x=e.clientX;y=e.clientY; document.body.setPointerCapture(e.pointerId);
-      view=land.getBoundingClientRect(); if(x<view.left||x>view.right||y<view.top||y>view.bottom)return;
+      view=land.getBoundingClientRect(); offLeft=x<view.left,offRight=x>view.right;
+      if(offLeft&&restartFlip||offRight&&!restartFlip){ restartFlip=!restartFlip,++restartCount;
+        if(restartCount==20)restart(),restartCount=0; }
+      if(offLeft||offRight||y<view.top||y>view.bottom)return; restartCount=0;
       box=guy.getBoundingClientRect(); clickGuy= x>=box.left&&x<=box.right&&y>=box.top&&y<=box.bottom;
       if(clickGuy&&!outgrowHelp){help=true,dHelp();}
       input.pointerId=e.pointerId; input.type='p'; input.targX=e.clientX;input.targY=e.clientY;
-      beginInput(pStep,360,130), restartCount=0; });
+      beginInput(pStep,360,130); });
     document.body.addEventListener('pointermove',(e)=>{ if(e.pointerType=='mouse'&&e.buttons==0)return;
       if(e.pointerId==input.pointerId){input.targX=e.clientX;input.targY=e.clientY;} });
     document.body.addEventListener('pointerup',(e)=>{if(input.type=='p'&&e.pointerId==input.pointerId)stopInput();});
@@ -215,7 +218,7 @@
       window.visualViewport.addEventListener('resize',resize);
       window.visualViewport.addEventListener('scroll',resize); }
 
-    restartCount=0,unlockDev=0;
+    restartCount=0,restartFlip=false,unlockDev=0;
     input={type:null,key:null,dirX:0,dirY:0,delay:null,repeat:null,targX:0,targY:0,pointerId:null}; got=[];
     slotsUsed=0; slots=[-1,-1,-1,-1]; help=false;outgrowHelp=false; noclip=false; resize();
 
