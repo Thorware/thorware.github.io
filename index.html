@@ -41,13 +41,13 @@
       background-size:38% 38%; background-position:center; background-repeat: no-repeat; }
     .plate.omni{background-color:#bbb;}
     .TL{top:0;left:0;} .TR{top:0;right:0;} .BL{bottom:0;left:0;} .BR{bottom:0;right:0;}
-    .joiner{position:relative; background-color:black; width:70%;height:70%; overflow:hidden;}
-    .joinerEl{position:absolute; width:35%;height:35%; background-color:var(--coinColor);}
-    .joinerEl.MID{ top:50%;left:50%;transform:translate(-50%,-50%);z-index:2; width:80%;height:80%; 
+    .joiner{position:relative; background-color:black; width:90%;height:90%; overflow:hidden;}
+    .joinerEl{position:absolute; width:35%;height:35%; background-color:var(--coinColor); z-index:2;}
+    .joinerEl.MID{top:50%;left:50%;transform:translate(-50%,-50%);z-index:1; width:85%;height:85%;}
+    .splitter{position:relative; background-color:black; width:90%;height:90%; overflow:hidden;}
+    .splitterEl{position:absolute; width:35%;height:35%; background-color:var(--coinColor);}
+    .splitterEl.MID{ top:50%;left:50%;transform:translate(-50%,-50%);z-index:2; width:65%;height:65%; 
       background-color:var(--coinColor); }
-    .splitter{position:relative; background-color:black; width:70%;height:70%; overflow:hidden;}
-    .splitterEl{position:absolute; width:35%;height:35%; background-color:var(--coinColor); z-index:2;}
-    .splitterEl.MID{top:50%;left:50%;transform:translate(-50%,-50%);z-index:1; width:80%;height:80%;}
     .water{ background-color:color-mix(in srgb,var(--c1Color),black 25%); width:80%;height:80%;
       clip-path:polygon(50% 0%,100% 50%,50% 100%,0% 50%); z-index:8; }
     .dirt{--tileColor:#422E20;}
@@ -70,7 +70,7 @@
     <div class="arrow up"></div><div class="arrow down"></div>
   </div></template>
   <div id="land"></div>
-  <script> const {min,max,abs}=Math; function clamp(x,lo,hi){return min(max(x,lo),hi);}
+  <script> const {min,max,abs,sign}=Math; function clamp(x,lo,hi){return min(max(x,lo),hi);}
     function startInputTimers(das,arr)
       {input.delay=setTimeout(()=>{input.repeat=setInterval(input.stepFn,arr);input.stepFn();},das);}
     function beginInput(stepFn,das,arr){input.stepFn=stepFn; startInputTimers(das,arr); stepFn();}
@@ -103,8 +103,9 @@
       else if(myX>end||dx&&myX==end)edge=true,++room; else if(myY>end||dy&&myY==end)edge=true,room+=roomSpan;
       if(edge)newRoom(dx,dy),outgrowHelp=true; x=myX,y=myY;
       for(o of obj){ t=o.t; if(t=='w')continue; if(x!=o.x||y!=o.y)continue;
-        if(t=='c'){ if(slotsUsed==4)continue; takeCoin(o.st); if(o.got)clearGot();
-          if(o.spot)removeObj(o.spot),o.light.el.classList.toggle('got',true); removeObj(o),setGot(); }
+        if(t=='c'){ if(slotsUsed==4)continue; takeCoin(o.st); if(o.got)clearGot(); removeObj(o);
+          if(!o.light)setGot();else{ o.light.el.classList.toggle('got',true),removeObj(o.light.spot)
+            ,g=got[got.findIndex(g=>g.r==room&&g.x==o.light.x&&g.y==o.light.y)],g.dx=null,g.dy=null,g.dist=null; }}
         else if(t=='g'){ removeObj(o),slotsUsed=0,slots=[-1,-1,-1,-1],dHands(),setGot();
           if(o.cp)localStorage.setItem('checkpoint',o.cp),got=[],loadCheckpoint(o.cp); }
         else if(t=='p'){ if(o.got){if(slotsUsed==4)continue; takeCoin(o.st),clearGot();}
@@ -121,13 +122,13 @@
           slotsUsed=4,slots=[o.st2,o.st2,o.st2,o.st2],dHands(); }
         else if(t=='~'){water=0;for(i=0;i<slotsUsed;++i)if(slots[i]==1)++water;}
         else if(t=='b'){if(water>0)onDirt=o;}
-        else if(t=='@'){ if(-1!=got.findIndex(g=>g.r==room&&g.x==o.tx&&g.y==o.ty)||roomClear[room])break;
+        else if(t=='@'){ if(roomClear[room])break; gi=getGotIdx(); if(gi!=-1&&got[gi].dx==null)break;
           light=0;for(i=0;i<slotsUsed;++i)if(slots[i]==0)++light; sp=o.spot;
-          s=sp.el.style;sx=x+o.dx*light,sy=y+o.dy*light; s.gridColumn=1+sx,s.gridRow=1+sy;
-          if(sp.coin)removeObj(sp.coin),sp.coin=null;
-          if(sx==o.tx&&sy==o.ty)sp.coin=makeFlavor('c','coin',sx,sy,o.st),sp.coin.spot=sp,sp.coin.light=o;
-          if(!o.got){if(light>0)setGot(light),o.got=true;}else{
-            if(light==0)clearGot(),o.got=false;else getGot().st=light; }}}}
+          s=sp.el.style;sx=clamp(x+dx*light,0,end),sy=clamp(y+dy*light,0,end); s.gridColumn=1+sx,s.gridRow=1+sy;
+          if(o.coin)removeObj(o.coin),o.coin=null;
+          if(sx==o.tx&&sy==o.ty)o.coin=makeFlavor('c','coin',sx,sy,o.st),o.coin.light=o;
+          if(gi==-1){if(light>0)got.push({r:room,x,y,dx,dy,dist:light});}else{
+            if(light==0)got.splice(gi,1);else g=got[gi],g.dx=dx,g.dy=dy,g.dist=light; }}}}
 
     function dGridDim(){document.documentElement.style.setProperty('--gridDim',gridDim);}
     function dGuyPos(){s=guyAura.style,s.gridColumn=myX+1,s.gridRow=myY+1;}
@@ -161,8 +162,10 @@
     function newRoom(dx=0,dy=0){ for(i=0;i<4;++i)waterHistory[i].x=waterHistory[i].y=-1;
       hitchInput(),obj=[],land.replaceChildren(),room=clamp(room,0,roomCodes.length-1)
       ,s=roomCodes[room],newDim=+s.slice(0,2),end=newDim-1,mid=end/2,loadIn=(dx==0&&dy==0);if(loadIn)myY=myX=mid;else{
-        om=(gridDim-1)/2; if(dx!=0)offY=myY-om,myY=clamp(mid+offY,0,end),myX=dx>0?0:end;
-        else offX=myX-om,myX=clamp(mid+offX,0,end),myY=dy>0?0:end; }
+        om=(gridDim-1)/2,ox=myX,oy=myY; if(dx!=0){ offY=myY-om,myY=clamp(mid+offY,0,end),myX=dx>0?0:end;
+          if(newDim<gridDim&& 0<oy&&oy<gridDim-1&& (myY==0||myY==end))myY-=sign(offY); }
+        else{ offX=myX-om,myX=clamp(mid+offX,0,end),myY=dy>0?0:end;
+          if(newDim<gridDim&& 0<ox&&ox<gridDim-1&& (myX==0||myX==end))myX-=sign(offX); }}
       gridDim=newDim,dGridDim(); s=s.slice(2); x=y=0; autoW=false; cleared=roomClear[room];
       wallsDone=false;for(pos=0;pos<s.length;++pos){ c=s[pos]; switch(c){ case'T':case'B':case'L':case'R':
           gap=0,n=s[pos+1];if('0'<=n&&n<='9')gap=+s[++pos];makeWalls(c,gap);break;default:wallsDone=true; }
@@ -186,13 +189,12 @@
           case'b':st=+s[++i];if(cleared)break;gotIdx=getGotIdx();
             if(gotIdx==-1){makeBasic('b','tile dirt',x,y).st=st;break;}
             if(got[gotIdx].st!=null)makeFlavor('c','coin',x,y,st).got=true;break;
-          case'@':o=makeBasic('@','light',x,y);o.st=+s[++i];d=s[++i]; o.dx=d=='l'?-1:d=='r'?1:0;
-            o.dy=d=='u'?-1:d=='d'?1:0;o.toss=+s[++i];gotIdx=getGotIdx();o.got=(gotIdx!=-1);
-            o.tx=x+o.dx*o.toss,o.ty=y+o.dy*o.toss;
-            if(cleared||-1!=got.findIndex(g=>g.r==room&&g.x==o.tx&&g.y==o.ty))
-              {o.el.classList.toggle('got',true);break;}
-            sx=x,sy=y;if(gotIdx!=-1){g=got[gotIdx];sx+=o.dx*g.st,sy+=o.dy*g.st;}o.spot=sp=makeBasic('','spot',sx,sy);
-            if(sx==o.tx&&sy==o.ty)sp.coin=makeFlavor('c','coin',sx,sy,o.st),sp.coin.spot=sp,sp.coin.light=o;break;
+          case'@':o=makeBasic('@','light',x,y);o.st=+s[++i];d=s[++i]; tdx=d=='l'?-1:d=='r'?1:0;
+            tdy=d=='u'?-1:d=='d'?1:0; toss=+s[++i],o.tx=x+tdx*toss,o.ty=y+tdy*toss,gotIdx=getGotIdx();
+            if(cleared||gotIdx!=-1&&got[gotIdx].dx==null){o.el.classList.toggle('got',true);break;}
+            sx=x,sy=y;if(gotIdx!=-1){g=got[gotIdx];sx=clamp(sx+g.dx*g.dist,0,end),sy=clamp(sy+g.dy*g.dist,0,end);}
+            o.spot=sp=makeBasic('','spot',sx,sy);
+            if(sx==o.tx&&sy==o.ty)o.coin=makeFlavor('c','coin',sx,sy,o.st),o.coin.light=o;break;
           case'Z':makeBasic('Z','end',x,y).el.textContent='This game is in active development.\nMore to come...';
             break; }
         if(dx||dy){ rpt=1; if(m){rpt=+s[++i]; if(rpt==1)rpt=10+ +s[++i];}
@@ -207,6 +209,7 @@
       cp=localStorage.getItem('checkpoint'); if(cp&&!dev)loadCheckpoint(cp),outgrowHelp=true; newRoom(); }
     function restart(){ localStorage.removeItem('checkpoint'); got=[]; slotsUsed=0; slots=[-1,-1,-1,-1];
       help=false;outgrowHelp=false; initRooms(); }
+    function warp(){restart(),cp='field',localStorage.setItem('checkpoint',cp),loadCheckpoint(cp),newRoom();}
     function loadCheckpoint(cp){ if(!checkpoints.includes(cp))return;
       clearRooms(17,1,19,3);if(cp=='intro_jailcell'){setRoom(17,3);return;}
       clearRooms(16,1,16,3);if(cp=='intro_maze'){setRoom(16,3);return;}
@@ -255,6 +258,7 @@
       if(dx||dy){ stopInput(); input.type='k'; input.key=e.key; input.dirX=dx;input.dirY=dy;
         beginInput(kbStep,240,120); }
       if(e.key=='Backspace')++restartCount;else restartCount=0; if(restartCount==10)restart(),restartCount=0;
+      if(e.key!='2')warpCount=0;else if(++warpCount==10)warp(),warpCount=0;
       if(dev){ if(e.key=='c')slotsUsed=4,slots=[0,0,0,0],dHands();
         if(e.key=='b')slotsUsed=4,slots=[1,1,1,1],dHands(); if(e.key=='r')slotsUsed=4,slots=[2,2,2,2],dHands();
         if(e.key=='x')slotsUsed=0,slots=[-1,-1,-1,-1],dHands();
@@ -271,7 +275,7 @@
       window.visualViewport.addEventListener('resize',resize);
       window.visualViewport.addEventListener('scroll',resize); }
 
-    restartCount=0,restartFlip=false,unlockDev=0;
+    restartCount=0,restartFlip=false,unlockDev=0,warpCount=0;
     input={type:null,key:null,dirX:0,dirY:0,delay:null,repeat:null,targX:0,targY:0,pointerId:null}; got=[];
     water=0,waterHistory=Array.from({length:4},()=>({x:-1,y:-1})),waterEl=new Array(4),onDirt=null;
     slotsUsed=0; slots=[-1,-1,-1,-1]; help=false;outgrowHelp=false; noclip=false; resize();
@@ -333,17 +337,18 @@
     /*8*/"05LTB1R1 9ulwug'intro_omni'1uwlc1lwdc1rc1dlw",
       "07TBL1R1 4drWruuWlc1uc1rc1rc1rdwrwdg'intro_traffic'1lg0dwrwdlc0lc0lc0ruc0",
       "11L1RT1B3 1drWR3Wrg'intro_joiner'1rWR3W6ldwldc0ldc0lc04rdwrdc0ruc0rdc0ruc0rc0uc0ruc0rc0uulc0L3c0dlc0dlc0rrc0",
-      "13TLR1 5b0uullwD4wR4wU4w3lddWulW1ddrWurW","09TRL1 54drwug'light_blue'1uw6lluwdc1dw",
+      "13TLR1 5b0uullwD4wR4wU4w3lddWulW1ddrWurW","09TRL1 4drwug'light_blue'1uw6lluwdc1dw",
       "11LRBT4 5lldb0rb0db0rc0ub0ub0rdb0db0urb0ulb0llb0ulb0R3b07urw9ulw","07TLR 2ddc0lwrrw","09T2RL 5ulwrrwD3wllw",
     /*9*/"07LT1 2dlwrg0rw5dc06WD3","09TRB1 1dw7uWU3W8ulWU4Wrc0dc0dc0dc1drWU4","09T3LRB3 5j01uullwD4wR4wU4w",
-      "13 1WD4rddrddrddrddW3WD4lddlddlddlddW5u@0u1ulwrrw","09LR 5d@1u3U3lwrrwulc1","07LBT 4rrc0uwddw",
+      "13 1WD4rddrddrddrddW3WD4lddlddlddlddW5uu@0d1ldwrrw","11LRT4 5u@1d2D2lwrrw","07LBT 4rrc0uwddw",
       "09 5l@0r3R3uwddw1dWurW3wlw7uWdrW9wlw","09R 7WrrU3rrWrg'light_intro'0rwrwddlwllw1w",
     /*10*/"09LRBT3 5olloR4o5uuoD4o","05 1rWD48rU4Wdlg'intro_blue'0","07LRB 7ruWR4Wulp1lp1lp1",
-      "13 2llWD3L3ddR3ddL3ddR3D3WR4WU3R3uuL3uuR3uuL3U3W6lluu@0d4","09LB1R3 4rrdwuc1uw",
-      "09TBR 5uus10D4j019ulououououououo1dw7uw","07LRB 58uulwrc0rw","07LRB2 1rwrw5lc0rrc0",
+      "15 2llWD4llullD3R4ddL4ddR4D4WR4WU4R4uuL4uuR4U3lldllU4W6lluu@0d4","11LB1R3 7rruuwuc1uwU3wuc1uw",
+      "09TBR 5uus10D4j019ulououououououo1dw7uw","07LRB 58uulwrc0rw",
+      "09LR 1rWrD3rrWruc0drwrwuulwllw9lWlU3llWldc0ulwlwddrwrrw",
     /*11*/"07TLR2B2 5c1dc1","09L2R2T1 2dlWddWrg1rWuu","07TRL2B2 5dc1","11 7WU4ruuruuruuW9WU4luuluuluuW4rrdwuR3@0l37rw",
-      "15 3D3WD3WddWD3L14U9W5u@0d3L4@0d2R8@0d11ddrWR5dWrug'light_three'0drWuR6W2lwdwrrwuw4rD3c0",
-      "07TBL1R24urwdg'light_remove'0dw1dro7uro3dlo9ulo","09TBL2R25d@0u2uulwrrw","07BRT2L2 5c0lwrrw",
+      "15 3D4WddWddWddL14U7W5u@0d3L4@0r2R8@0u11D3rWR5Wrug'light_three'0rdWR6W2lWddWrrWuuW4rU3c0",
+      "07TBL1R24urwdg'light_remove'0dw18uororo","09TBL2R25d@0u2uulwrrw","09BRL23lwlw5ddwrrwulc06lwlwllWluull",
     /*12*/"07LRBT2 1rdw3ldw5dlp0rrp0","09LRB1 7ruw9luw5dlc0uulc0rruc0ddrrc0","07LRBT2 1rdw3ldw5dlp0rrp0",
       "11LB2 3w5olouororododololo7urw1rw","13TL5 5@0r4L3uwddw5uulwrrw5R4uwddw","13T 2ddb0rb0rruWddWL5WuuW",
       "13T 2dL3WD4Wluwrrwuuwllw2dR3WD4Wluwrrwuuwllw",
@@ -359,7 +364,7 @@
       +"uWL7D8R7Wr~uWU8L9D10R10uWu~uWU7",
     /*15*/"09TLB 1drw7urwrruc0luuc0uurc0rrdc0dlc0drc0","09TB 1ddrrwrrwrrw7uurrwrrwrrw",
       "09R 9lwL4WL31wR4ddruuWrrWddWlg0",
-      "13LRT2B28ullWU7lWrrwrg2rwrrWlD7Wurwllwlg'lightwater'0lwllwU3wrrwrg1rwrrwdllc0llc0uuc0rrc0"
+      "13LRT2B28ullWU7lWrrwrg2rwrrWlD7Wurwllwlg'lightwater'0lwllwU3wrrwrg1rwrrwdllc0llc0uuc0rrc0 8lwrrw"
       +"2ddc2L4c2R8c24rrddc1dc1R8c1uc1","05","05","05","05",
     /*16*/"07TLB 9uWllW6uWdL5drWdlc02rdWllWlc0","07TB 6dWuuL4ddWlc08urwuw7uw4wuw",
       "07R 7WR3Wrrw4dWuuR3Wrg'intro_maze'0rw1WrrdWlc0","03LRB 5Z","05","05","05","05",
