@@ -6,7 +6,7 @@
     viewBox='0 0 100 100'><rect width='100' height='100' fill='rgb(255,0,0)'/></svg>">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no
     , viewport-fit=cover">
-  <title>Red Square</title>
+  <title>|</title>
   <style> *{box-sizing:border-box; margin:0; padding:0; -webkit-user-drag:none;-webkit-touch-callout:none;}
     :root{--guyColor:red;--c0Color:yellow;--c1Color:#1F26EB;--c2Color:#C50000;}
     html{width:100%;height:100%; overflow:hidden; background-color:#111;}
@@ -217,7 +217,8 @@
       cp=localStorage.getItem('checkpoint'); if(cp&&!dev)loadCheckpoint(cp),outgrowHelp=true; newRoom(); }
     function restart(){ localStorage.removeItem('checkpoint'); got=[]; slotsUsed=0; slots=[-1,-1,-1,-1];
       help=false;outgrowHelp=false; initRooms(); }
-    function warp(){restart(),cp='field',localStorage.setItem('checkpoint',cp),loadCheckpoint(cp),newRoom();}
+    function warp(k){ restart(),cp=k=='2'?'field':'lightwater',localStorage.setItem('checkpoint',cp)
+      ,loadCheckpoint(cp),newRoom(); }
     function loadCheckpoint(cp){ if(!checkpoints.includes(cp))return;
       clearRooms(17,1,19,3);if(cp=='intro_jailcell'){setRoom(17,3);return;}
       clearRooms(16,1,16,3);if(cp=='intro_maze'){setRoom(16,3);return;}
@@ -269,19 +270,19 @@
     document.body.addEventListener('pointercancel',(e)=>{
       if(input.type=='p'&&e.pointerId==input.pointerId)stopInput(); });
     document.body.addEventListener('touchstart',(e)=>{e.preventDefault();},{passive:false});
-    window.addEventListener('keydown',(e)=>{ if(e.repeat)return; dx=0;dy=0;
-      if(e.key=='ArrowRight'||e.key=='d'||e.key=='D')dx=1; if(e.key=='ArrowLeft'||e.key=='a'||e.key=='A')dx=-1;
-      if(e.key=='ArrowUp'||e.key=='w'||e.key=='W')dy=-1; if(e.key=='ArrowDown'||e.key=='s'||e.key=='S')dy=1;
-      if(dx||dy){ stopInput(); input.type='k'; input.key=e.key; input.dirX=dx;input.dirY=dy;
+    window.addEventListener('keydown',(e)=>{ if(e.repeat)return; dx=0;dy=0; const k=e.key;
+      if(k=='ArrowRight'||k=='d'||k=='D')dx=1; if(k=='ArrowLeft'||k=='a'||k=='A')dx=-1;
+      if(k=='ArrowUp'||k=='w'||k=='W')dy=-1; if(k=='ArrowDown'||k=='s'||k=='S')dy=1;
+      if(dx||dy){ stopInput(); input.type='k'; input.key=k; input.dirX=dx;input.dirY=dy;
         beginInput(kbStep,240,120); }
-      if(e.key=='Backspace')++restartCount;else restartCount=0; if(restartCount==10)restart(),restartCount=0;
-      if(e.key!='2')warpCount=0;else if(++warpCount==10)warp(),warpCount=0;
-      if(dev){ if(e.key=='c'&&slotsUsed<4)slots[slotsUsed++]=0,dHands();
-        if(e.key=='b'&&slotsUsed<4)slots[slotsUsed++]=1,dHands();
-        if(e.key=='r'&&slotsUsed<4)slots[slotsUsed++]=2,dHands();
-        if(e.key=='x'&&slotsUsed>0)slots[--slotsUsed]=-1,dHands();
-        if(e.key==' ')noclip=!noclip;
-      } else{if(e.key=='0')++unlockDev;else unlockDev=0; if(unlockDev==5)dev=true;} });
+      if(k=='Backspace')++restartCount;else restartCount=0; if(restartCount==10)restart(),restartCount=0;
+      warpKey=(k=='2'||k=='3');if(!warpKey)warpCount=0;else if(++warpCount==10)warp(k),warpCount=0;
+      if(dev){ if(k=='c'&&slotsUsed<4)slots[slotsUsed++]=0,dHands();
+        if(k=='b'&&slotsUsed<4)slots[slotsUsed++]=1,dHands();
+        if(k=='r'&&slotsUsed<4)slots[slotsUsed++]=2,dHands();
+        if(k=='x'&&slotsUsed>0)slots[--slotsUsed]=-1,dHands();
+        if(k==' ')noclip=!noclip;
+      } else{if(k=='0')++unlockDev;else unlockDev=0; if(unlockDev==5)dev=true;} });
     window.addEventListener('keyup',(e)=>{if(input.type=='k'&&input.key==e.key)stopInput();});
     function resize(){ window.scrollTo(0,0); vv=window.visualViewport;
       width=vv?vv.width:document.documentElement.clientWidth;
@@ -404,25 +405,26 @@
     /*19*/"05BL 1drc09ulc0","05B","05BR 6lc0","09T2LBR1 6ulwdg0dwullc0lc0lc0lc05ddllp2R3p2",
       "13L1T3BR 1R4D8uuWuulWrrwuc1uc1llc1dc15R3D4WuulWrrwuc1uc1llc1dc1","05LBT1R1 6lg'red_light'2lc2urwllWddrrW",
       "15L1R 7rWR5Wr~rWR5W8uwr~u~u~u~rc2u~u~ul~u~u~ul~u~u~ur~u~7ruuWdrWR4w9ullWruW","07LRB1T2 8ug'button_intro'24rc2",
-    /*20*/"11TLB28ullWuulWrrwrg'button_field'2rwrrWlddW","11T 7w6ddWL7W6dL3,1","11T 4ddw6D3wlwl,12drwdw",
-      "11T 5.4D3wrw5U3lWR4D3Wuul,1","11T 1R3D4c2R4wD4wL4w","11T 2dWddrWllwul,15.","11T 5uWuulWrrw5,1dWddlWrrw",
+    /*20*/"11TLB28ullWuulWrrwrg'button_field'2rwrrWlddW","11T 7w6ddWL7U4W6dL3,1","11T 4ddw6D3wlwl,12drwdw",
+      "11T 5.4D3wrw5U3lWR4D3Wuul,1","11T 1R3D4wR4wD4wL4w","11T 2dWddrWllwul,15.","11T 5uWuulWrrw5,1dWddlWrrw",
       "11RT1 2D3llwddwddwddwR4wuu,1uuwuuw",
     /*21*/"17LRT21drw3dlw2D3llWllddrruWD3WllddrruWD3WL3D3R3uuW2D3rrWrrddlluWD3WrrddlluWD3WR3D3L3uuW",
-      "11LB 7U3R3wuuwuuwR4.ddwddw5d,1","11B 5uu,1lWurrdW5dlWdrruW","11B 5lluWuurrWD3WrrddWull,1",
-      "11B 8uL3ororororororo5j12","11B 8uwl,1lwR4w","11B 8rruWuurWllwllwllWrddWrr,1",
+      "11LB 7U3R3wuuwuuwR4.ddwddw5d,1","11B 5uu,1lWurrdW5dlWdrruW","11B 5lluWuurrWD3WrrddWull,19ullw",
+      "11B 8uL3ororororororo5j12ddc2","11B 8uwl,1lwR4w","11B 8rruWuurWllwllwllWrddWrr,1",
       "11BR 5.2dllwdd,1ddwddwR4wuuwuuwuuw",
-    /*22*/"17B1LR2 1rdodododododorruj01U3j128uL5WU5R4WrrWR4D5Wluug'journey'0llg0llg0llg0llg0uug0rrg0rrg0rrg0rrg0"
+    /*22*/"17B1LR2 3ldodododododolluj01U3j128uL5WU5R4WrrWR4D5Wluug'journey'0llg0llg0llg0llg0uug0rrg0rrg0rrg0rrg0"
       +"dlWddL7WuurWR4uW8U6g0ug0ug0ug0ug0ug0rdwdrwdrwdrwllwluwllwldwllwurwurwurw",
       "19L2 3WL17dR15WdllWL13dR11WdllWL9dR6WdL3WL3dW9WL17uR15WullWL13uR11WullWL9uR6WuL3WL3uW",
       "75TB 1dR8WR5WR12WR7WR9WR3WR18wrw7uR5wrwR11WR4WR11WR17WR12WR6W1ddWurW3ddWulW7uuWdrW9uuWdlW",
       "19R2 1WR17dL15WdrrWR13dL11WdrrWR9dL6WdR3WR3dW7WR17uL15WurrWR13uL11WurrWR9uL6WuR3WR3uW",
       "17TBL2R3 4uurWU5R8WdllWL5D3WurWurrW7rU3WddR4WuL3w3dL5WR4dL3dR3dL4dR4WdlwllWlldrW9uL5WR4uL3uR3uuW"
-      +"6L6WddrrWulwD3rWrrWL4wuwulwuuw6luw","19TBL3R3 1drWR16dL16dR16dL16dR16dL4WllWL10W7urWR16uL16uR16uL16uR16uL16W"
-      +"4rrddWrrWulwU3rWrrddruurddWurwD3WrururdrrWrrdWL5WU3rrwdrrwuurwL13dw",
-      "17L3R1TB 4rD4WD3R4WuL3w4rU4WU3R4WdL3w6lD3WD4L4WuR3w6lU3WU4L4WdR3w2ddL4olo2ddR5o9uuL3ololoL3dj01uL3ollo"
+      +"6L6WddrrWulwD3rWrrWL4wuwulwuuw","19TBL3R3 1drWR16dL16dR16dL16dR16dL4WllWL10W7urWR16uL16uR16uL16uR16uL16W"
+      +"4rrddWrrWulwU3rWrrddruurddWurwD3WrururdrrWrrdWL5WU4R5wdw",
+      "17L3R1TB 4rD4WD3R4WuL3w4rU4WU3R4WdL3w6lD3WD4L4WuR3w6lU3WU4L4WdR3w8urj01urrororo"
       +"5c0uc0lc0dc0dc0rc0rc0uc0uc0ulc0lc0ldc0dc0dc0drc0rc0rc0ruc0uuc0uc0uc0lc0llc0lc0ldc0dc0dc0ddc0dc0rc0rc0rrc0"
       +"rc0ruc0uc0uc0uuc0uc0ulc0lc0llc0llc0lc0ddc0ddc0dc0ddc0drc0rrc0rrc0rc0rruc0uc0uuc0uuc0uc0uc05L5uc05R5dc0uuc0"
-      +"uuc05U5c0ulc05D5c0","07TRBL1 1drw3dlw9ulw7urw5j12rrup2dp2dp2dL3p1U4p1",
+      +"uuc05U5c0ulc05D5c0",
+      "13TRBL1 5llj12rruup2drp2ddp2dlp2lldp1llp1U6p1rrp14rD3WdR4WrruWrU6lWullWL4dWuuWR5WR3ororodolololwrdWD6rU6rD6W7urWR5WR3ororouolololw",
     /*23*/"03LRB 5Z","05","05","05","05","05","05","05",
     /*24*/"05","05","05","05","05","05","05","05",
     /*25*/"05","05","05","05","05","05","05","05",
