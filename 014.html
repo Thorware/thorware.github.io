@@ -3,11 +3,12 @@
 <html lang="en">
 <head><meta charset="UTF-8">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'
-    viewBox='0 0 100 100'><rect width='100' height='100' fill='rgb(255,0,0)'/></svg>"><title>||</title>
+    viewBox='0 0 100 100'><rect width='100' height='100' fill='rgb(255,0,0)'/></svg>">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no
     , viewport-fit=cover">
+  <title>Red Square</title>
   <style> *{box-sizing:border-box; margin:0; padding:0; -webkit-user-drag:none;-webkit-touch-callout:none;}
-    :root{--guyColor:red;--c0Color:yellow;--c1Color:#1F26EB;--c2Color:#C50000;}
+    :root{--guyColor:red;--c0Color:yellow;--c1Color:blue;}
     html{width:100%;height:100%; overflow:hidden; background-color:#111;}
     body{ background-color:#202020; display:flex;justify-content:center;align-items:center; position:absolute;
       top:0; left:0; overflow:hidden; user-select:none; cursor:pointer; overscroll-behavior:none; touch-action:none;
@@ -52,13 +53,6 @@
     .light.got{background-color:color-mix(in srgb,var(--c0Color),black 75%);}
     .spot{ width:98%;height:98%; border-radius:50%; z-index:1;
       background-color:transparent; border:calc(6cqw/var(--gridDim)) solid var(--c0Color); }
-    .button{ width:40%;height:40%; border-radius:50%;
-      background-color:var(--c2Color);opacity:calc(100%*(1 - .8*var(--buttonT))); }
-    .case{width:100%;height:100%; display:grid; place-items:center;}
-    .caseRing{ width:98%;height:98%; border-radius:50%; border:calc(6cqw/var(--gridDim)) solid var(--c2Color); 
-      opacity:calc((10% + 90%*var(--buttonT))*clamp(0,var(--buttonT)*1000,1)); box-sizing:border-box; grid-area:1/1; }
-    .caseCoin{ background-color:var(--coinColor); width:35%;height:35%; opacity:clamp(0,var(--buttonT)*1000,1);
-        grid-area:1/1; }
     .end{ width:100%;height:100%; display:flex; align-items:center; justify-content:center; text-align:center;
       font-size:3.8cqw; color:white; box-sizing:border-box; z-index:99;
       min-width:0;min-height:0; overflow-wrap:anywhere; overflow:hidden; white-space:pre-line;
@@ -75,49 +69,42 @@
   </div></template>
   <div id="land"></div>
   <script> const {min,max,abs,sign}=Math; function clamp(x,lo,hi){return min(max(x,lo),hi);}
-    function startInputTimers(das,arr){prevTime=performance.now(),isDAS=true;
-      function tick(time){ if(isDAS){ if(time-prevTime>=das)isDAS=false,prevTime=time,input.stepFn();
-          }else{dTime=time-prevTime; if(dTime>=arr)input.stepFn(),prevTime=time-(dTime%arr);}
-        if(input.loop!=null)input.loop=requestAnimationFrame(tick); } input.loop=requestAnimationFrame(tick); }
+    function startInputTimers(das,arr)
+      {input.delay=setTimeout(()=>{input.repeat=setInterval(input.stepFn,arr);input.stepFn();},das);}
     function beginInput(stepFn,das,arr){input.stepFn=stepFn; startInputTimers(das,arr); stepFn();}
-    function stopInput(){ const i=input; cancelAnimationFrame(i.loop),i.loop=null;
-      i.type=null,i.key=null,i.dirX=0,i.dirY=0,i.targX=0,i.targY=0,i.pointerId=null; }
-    function hitchInput(){if(input.type!='p')return; input.view=true;}
+    function stopInput(){ const i=input; clearTimeout(i.delay);clearInterval(i.repeat); i.delay=null;i.repeat=null;
+      i.type=null; i.key=null; i.dirX=0;i.dirY=0; i.targX=0;i.targY=0; i.pointerId=null; }
+    function hitchInput(){ if(input.type!='p')return;
+      clearTimeout(input.delay);clearInterval(input.repeat); startInputTimers(250,130); }
     function kbStep(){tryMove(input.dirX,input.dirY);}
-    function pStep(){ if(input.view) return;
-      box=guy.getBoundingClientRect(); s=box.width; h=s/2; cx=box.left+h;cy=box.top+h;
-      vx=input.targX-cx;vy=input.targY-cy; ax=abs(vx),ay=abs(vy); inCol=ax<=h,inRow=ay<=h; if(inCol&&inRow)return;
-      dx=inCol?0:vx<0?-1:1,dy=inRow?0:vy<0?-1:1; if(myX==0&&dx<0||myX==end&&dx>0)dy=0;
-      if(myY==0&&dy<0||myY==end&&dy>0)dx=0; if(dx==0||dy==0){tryMove(dx,dy);return;}
-      ox=obj.find(o=>o.x==myX+dx&&o.y==myY),oy=obj.find(o=>o.x==myX&&o.y==myY+dy);
-      vert=ay>ax;strongBand=h+s/3;strong=(vert?ax:ay)<strongBand&&(vert?ay:ax)>strongBand;
-      function score(o){ if(!o)return 2; t=o.t; if((t=='w'||t=='g'&&!checkGate(o))&&!noclip)return 0;
-        if(t=='w'&&noclip)return 2; if(t=='~'||t==',')return 2; return 1; }
-      xScore=score(ox),yScore=score(oy); if(xScore==yScore)vert?++yScore:++xScore;
-      if(strong){if(vert&&yScore!=0)yScore=5;if(!vert&&xScore!=0)xScore=5;} xScore>yScore?dy=0:dx=0; tryMove(dx,dy); }
+    function pStep(){ box=guy.getBoundingClientRect(); s=box.width; h=s/2; cx=box.left+h;cy=box.top+h;
+      vx=input.targX-cx;vy=input.targY-cy; ax=abs(vx); ay=abs(vy); dx=vx<0?-1:1;dy=vy<0?-1:1;
+      if(ax<=h&&ay<=h)return; card=ax<=h||ay<=h; vert=ay>ax;
+      if(vert){if(!tryMove(0,dy)&&!card) tryMove(dx,0);} else if(!tryMove(dx,0)&&!card) tryMove(0,dy); }
 
     function checkGate(o){if(slotsUsed<4)return false; for(i=0;i<4;++i)if(slots[i]!=o.st)return false;return true;}
-    function blocked(x,y){return obj.some(o=>o.x==x&&o.y==y&&(o.t=='w'||o.t=='g'&&!checkGate(o)));}
-    function tryMove(dx,dy){if(!noclip&&blocked(myX+dx,myY+dy))return false; move(dx,dy); return true;}
+    function blocked(x,y){return obj.some(o=>o.x==x&&o.y==y&&(o.t=='w'&&!noclip||o.t=='g'&&!checkGate(o)));}
+    function tryMove(dx,dy){if(blocked(myX+dx,myY+dy))return false; move(dx,dy); return true;}
     function removeObj(o){o.el.remove(),o.el=null,obj.splice(obj.indexOf(o),1);}
     function setGot(){got.push({r:room,x,y});}  function setGot(st){got.push({r:room,x,y,st});}
     function getGotIdx(){return got.findIndex(g=>g.r==room&& g.x==x&& g.y==y);}
     function isGot(){return -1!=getGotIdx();}
     function clearGot(){got.splice(getGotIdx(),1);}  function getGot(){return got[getGotIdx()];}
     
-    function move(dx,dy){ if(water){ if(onDirt){ --water,h=waterHistory[water],h.x=h.y=-1,st=onDirt.st
+    function takeCoin(st){slots[slotsUsed++]=st,dHands();}
+    function move(dx,dy){ if(water){
+        if(onDirt){ --water,h=waterHistory[water],h.x=h.y=-1,st=onDirt.st
           ,makeFlavor('c','coin',myX,myY,onDirt.st).got=true,removeObj(onDirt),onDirt=null,x=myX,y=myY,setGot(st); }
         else{for(i=water-1;i>0;--i)waterHistory[i]=waterHistory[i-1]; waterHistory[0]={x:myX,y:myY};} dWater(); }
       if(help)help=false,outgrowHelp=true,dHelp(); myX+=dx,myY+=dy,dGuyPos(); edge=false;
       if(myX<0||dx&&myX==0)edge=true,--room; else if(myY<0||dy&&myY==0)edge=true,room-=roomSpan;
       else if(myX>end||dx&&myX==end)edge=true,++room; else if(myY>end||dy&&myY==end)edge=true,room+=roomSpan;
-      else if(gridDim>19&&dx){if(dx<0&&myX<4)edge=true,--room;else if(dx>0&&myX>end-4)edge=true,++room;}
-      if(edge)newRoom(dx,dy),outgrowHelp=true; x=myX,y=myY; function takeCoin(st){slots[slotsUsed++]=st,dHands();}
-      buttonFresh=false; for(o of obj){ t=o.t; if(t=='w')continue; if(x!=o.x||y!=o.y)continue;
+      if(edge)newRoom(dx,dy),outgrowHelp=true; x=myX,y=myY;
+      for(o of obj){ t=o.t; if(t=='w')continue; if(x!=o.x||y!=o.y)continue;
         if(t=='c'){ if(slotsUsed==4)continue; takeCoin(o.st); if(o.got)clearGot(); removeObj(o);
           if(!o.light)setGot();else{ o.light.el.classList.toggle('got',true),removeObj(o.light.spot)
             ,g=got[got.findIndex(g=>g.r==room&&g.x==o.light.x&&g.y==o.light.y)],g.dx=null,g.dy=null,g.dist=null; }}
-        else if(t=='g'){ if(!checkGate(o))continue; removeObj(o),slotsUsed=0,slots=[-1,-1,-1,-1],dHands(),setGot();
+        else if(t=='g'){ removeObj(o),slotsUsed=0,slots=[-1,-1,-1,-1],dHands(),setGot();
           if(o.cp)localStorage.setItem('checkpoint',o.cp),got=[],loadCheckpoint(o.cp); }
         else if(t=='p'){ if(o.got){if(slotsUsed==4)continue; takeCoin(o.st),clearGot();}
           else{ if(slotsUsed==0)continue; idx=slots.lastIndexOf(o.st); if(idx==-1)continue;
@@ -138,12 +125,7 @@
           if(o.coin)removeObj(o.coin),o.coin=null;
           if(sx==o.tx&&sy==o.ty)o.coin=makeFlavor('c','coin',sx,sy,o.st),o.coin.light=o;
           if(gi==-1){if(light>0)got.push({r:room,x,y,dx,dy,dist:light});}else{
-            if(light==0)got.splice(gi,1);else g=got[gi],g.dx=dx,g.dy=dy,g.dist=light; }}
-        else if(t=='.'){ b=0;for(i=0;i<slotsUsed;++i)if(slots[i]==2)++b; buttonFresh=b>0;
-          buttonMax=5*b,buttonLeft=buttonMax;if(buttonMax==0)buttonMax=1;dButton(); }
-        else if(t==','){ if(slotsUsed==4||buttonLeft==0||!o.coin)continue;
-          o.coin.remove(),o.coin=null,takeCoin(o.st),setGot(); }}
-        if(buttonLeft>0&&!buttonFresh)--buttonLeft,dButton(); }
+            if(light==0)got.splice(gi,1);else g=got[gi],g.dx=dx,g.dy=dy,g.dist=light; }}}}
 
     function dGridDim(){document.documentElement.style.setProperty('--gridDim',gridDim);}
     function dGuyPos(){s=guyAura.style,s.gridColumn=myX+1,s.gridRow=myY+1;}
@@ -155,7 +137,6 @@
         if(i<slotsUsed)c[i].style='--coinColor:'+subtypeColors[slots[i]]; }}
     function dWater(){ for(i=0;i<4;++i){ s=waterEl[i].style;h=waterHistory[i];
         if(water>i)s.gridColumn=h.x+1,s.gridRow=h.y+1;else s.gridColumn=s.gridRow=-1; }}
-    function dButton(){document.documentElement.style.setProperty('--buttonT',buttonLeft/buttonMax);}
 
     function makeEl(cName){let el=document.createElement('div');el.className=cName;return el;}
     function makeWalls(c,gap){ end=gridDim-1,mid=end/2,x=0,y=0,dx=0,dy=0;
@@ -163,8 +144,7 @@
       for(i=0;i<=end;++i,x+=dx,y+=dy)if(abs(mid-i)>=gap)makeBasic('w','tile wall',x,y); }
     function makeGuy(){ for(i=0;i<4;++i)waterEl[i]=makeEl('water'),s=waterEl[i].style,s.gridColumn=s.gridRow=-1
       ,land.appendChild(waterEl[i]); land.appendChild(guyMold.content.cloneNode(true)); dGuyPos();dHands(); }
-    function makePart(name,dad,st){ n=makeEl(name),n.style='--coinColor:'+subtypeColors[st],dad.appendChild(n);
-      return n; }
+    function makePart(name,dad,st){n=makeEl(name),n.style='--coinColor:'+subtypeColors[st],dad.appendChild(n);}
     function makeJoiner(x,y){ n=makeBasic('j','station',x,y),n.st1=st1,n.st2=st2;
       el=n.el.appendChild(makeEl('joiner')),makePart('joinerBand',el,st1),makePart('joinerSingle',el,st2); }
     function makeBasic(t,cName,x,y){ el=makeEl(cName);
@@ -172,118 +152,110 @@
     function makeFlavor(t,cName,x,y,st){ el=makeEl(cName); el.style='--coinColor:'+subtypeColors[st];
       el.style.gridColumn=x+1,el.style.gridRow=y+1,land.appendChild(el); return obj[obj.push({t,st,x,y,el})-1];
     } subtypeColors=['yellow','#1F26EB','#C50000'];
-    function newRoom(dx=0,dy=0){ for(let j=0;j<4;++j)wh=waterHistory[j],wh.x=wh.y=-1; hitchInput(),obj=[]
-      ,land.replaceChildren(),room=clamp(room,0,roomCodes.length-1),s=roomCodes[room];let i=0,a=+s[i++];
-      if(+s[i])a=+s[i++]+10*a;newDim=a,end=newDim-1,mid=end/2,loadIn=(dx==0&&dy==0);if(loadIn)myY=myX=mid;else{
-        om=(gridDim-1)/2,ox=myX,oy=myY; if(dx){ offY=myY-om,myY=clamp(mid+offY,0,end),myX=dx>0?0:end;
+    function newRoom(dx=0,dy=0){ for(i=0;i<4;++i)waterHistory[i].x=waterHistory[i].y=-1;
+      hitchInput(),obj=[],land.replaceChildren(),room=clamp(room,0,roomCodes.length-1)
+      ,s=roomCodes[room],newDim=+s.slice(0,2),end=newDim-1,mid=end/2,loadIn=(dx==0&&dy==0);if(loadIn)myY=myX=mid;else{
+        om=(gridDim-1)/2,ox=myX,oy=myY; if(dx!=0){ offY=myY-om,myY=clamp(mid+offY,0,end),myX=dx>0?0:end;
           if(newDim<gridDim&& 0<oy&&oy<gridDim-1&& (myY==0||myY==end))myY-=sign(offY); }
         else{ offX=myX-om,myX=clamp(mid+offX,0,end),myY=dy>0?0:end;
           if(newDim<gridDim&& 0<ox&&ox<gridDim-1&& (myX==0||myX==end))myX-=sign(offX); }}
-      gridDim=newDim,dGridDim(),x=y=0,autoW=false,cleared=roomClear[room],wallsDone=false;
-      for(;i<s.length;++i){ c=s[i]; switch(c){ case'T':case'B':case'L':case'R':
-          gap=0,n=s[i+1];if('0'<=n&&n<='9')gap=+s[++i];makeWalls(c,gap);break;default:wallsDone=true; }
+      gridDim=newDim,dGridDim(); s=s.slice(2); x=y=0; autoW=false; cleared=roomClear[room];
+      wallsDone=false;for(pos=0;pos<s.length;++pos){ c=s[pos]; switch(c){ case'T':case'B':case'L':case'R':
+          gap=0,n=s[pos+1];if('0'<=n&&n<='9')gap=+s[++pos];makeWalls(c,gap);break;default:wallsDone=true; }
         if(wallsDone)break; }
-      function placeWall(){makeBasic('w','tile wall',x,y);}
-      function stamp(){prev=i,i=p,readStamp(),i=prev;} function readStamp(){ c=s[i];switch(c){
+      for(let i=pos;i<s.length;++i){ c=s[i]; dx=0,dy=0,m=0; switch(c){
+          case'1':x=y=0;break; case'2':x=mid,y=0;break; case'3':x=end,y=0;break;
+          case'4':x=0,y=mid;break; case'5':x=y=mid;break; case'6':x=end,y=mid;break;
+          case'7':x=0,y=end;break; case'8':x=mid,y=end;break; case'9':x=y=end;break;
+          case'u':dy=-1;break; case'd':dy=1;break; case'l':dx=-1;break; case'r':dx=1;break;
+          case'U':dy=-1,m=1;break; case'D':dy=1,m=1;break; case'L':dx=-1,m=1;break; case'R':dx=1,m=1;break;
+          case'W':autoW=!autoW;if(!autoW)break; case'w':makeBasic('w','tile wall',x,y);break;
           case'c':st=+s[++i];if(cleared||isGot())break;makeFlavor(c,'coin',x,y,st);break;
-          case'p':st=+s[++i];o=makeFlavor(c,'plate',x,y,st);o.got=isGot();o.el.classList.toggle('full',o.got);break;
+          case'g':++i;cp=null;if(s[i]=="'")++i,z=s.indexOf("'",i),cp=s.slice(i,z),i=z+1;st=+s[i];
+            if(cp&&loadIn&&!dev)myX=x,myY=y;if(cleared||isGot())break;makeFlavor(c,'gate',x,y,st).cp=cp;break;
+          case'p':st=+s[++i];n=makeFlavor(c,'plate',x,y,st);n.got=isGot();n.el.classList.toggle('full',n.got);break;
           case'o':gotIdx=getGotIdx(); if(gotIdx==-1)makeBasic(c,'plate omni',x,y);
             else makeFlavor(c,'plate omni full',x,y,got[gotIdx].st).got=true; break;
+          case'j':st1=+s[++i],st2=+s[++i];makeJoiner(x,y);break;
           case'~':makeBasic('~','water',x,y);break;
           case'b':st=+s[++i];if(cleared)break;gotIdx=getGotIdx();
             if(gotIdx==-1){makeBasic('b','tile dirt',x,y).st=st;break;}
             if(got[gotIdx].st!=null)makeFlavor('c','coin',x,y,st).got=true;break;
-          case'g':cp=null;if(s[++i]=="'")++i,z=s.indexOf("'",i),cp=s.slice(i,z),i=z+1;st=+s[i];
-            if(cp&&loadIn&&!dev)myX=x,myY=y;if(cleared||isGot())break;makeFlavor(c,'gate',x,y,st).cp=cp;break; };}
-      let skip=0,toggle=0,p=0;  for(;i<s.length;++i){ c=s[i]; dx=0,dy=0,m=0; switch(c){
-          case'1':x=y=0;break;case'2':x=mid,y=0;break;case'3':x=end,y=0;break;
-          case'4':x=0,y=mid;break;case'5':x=y=mid;break;case'6':x=end,y=mid;break;
-          case'7':x=0,y=end;break;case'8':x=mid,y=end;break;case'9':x=y=end;break;
-          case'L':m=1;case'l':dx=-1;break;case'R':m=1;case'r':dx=1;break;
-          case'U':m=1;case'u':dy=-1;break;case'D':m=1;case'd':dy=1;break;
-          case'Q':m=1;case'q':dx=-1,dy=-1;break;case'E':m=1;case'e':dx=1,dy=-1;break;
-          case'Z':m=1;case'z':dx=-1,dy=1;break;case'X':m=1;case'x':dx=1,dy=1;break;
-          case'<':dx=-2;break;case'>':dx=2;break;case'^':dy=-2;break;case'v':dy=2;break;
-          case'S':skip=+s[++i];if(skip==1)skip=+s[++i]+10;break;case's':skip=1;break; case'T':toggle=!toggle;break;
-          case'W':autoW=!autoW;if(!autoW)break;case'w':placeWall();break;
-          case'c':case'p':case'o':case'g':case'~':case'b':p=i,readStamp();break;
-          case'j':st1=+s[++i],st2=+s[++i];makeJoiner(x,y);break;
           case'@':o=makeBasic('@','light',x,y);o.st=+s[++i];d=s[++i]; tdx=d=='l'?-1:d=='r'?1:0;
             tdy=d=='u'?-1:d=='d'?1:0; toss=+s[++i],o.tx=x+tdx*toss,o.ty=y+tdy*toss,gotIdx=getGotIdx();
             if(cleared||gotIdx!=-1&&got[gotIdx].dx==null){o.el.classList.toggle('got',true);break;}
             sx=x,sy=y;if(gotIdx!=-1){g=got[gotIdx];sx=clamp(sx+g.dx*g.dist,0,end),sy=clamp(sy+g.dy*g.dist,0,end);}
             o.spot=sp=makeBasic('','spot',sx,sy);
             if(sx==o.tx&&sy==o.ty)o.coin=makeFlavor('c','coin',sx,sy,o.st),o.coin.light=o;break;
-          case'.':o=makeBasic('.','button',x,y);break;
-          case',':st=+s[++i];o=makeBasic(',','case',x,y),o.st=st,o.el.appendChild(makeEl('caseRing'));
-            if(!cleared&&!isGot())o.coin=makePart('caseCoin',o.el,st); break;
-          case'}':makeBasic('}','end',x,y).el.textContent='This game is in active development.\nMore to come...';
+          case'Z':makeBasic('Z','end',x,y).el.textContent='This game is in active development.\nMore to come...';
             break; }
         if(dx||dy){ rpt=1; if(m){rpt=+s[++i]; if(rpt==1)rpt=10+ +s[++i];}
-          for(j=0;j<rpt;++j){x+=dx,y+=dy; if(skip){--skip;continue;} if(autoW)placeWall(); if(toggle)stamp();} }}
+          for(j=0;j<rpt;++j){x+=dx,y+=dy;if(autoW)makeBasic('w','tile wall',x,y);} }}
       makeGuy(); }
     function roomID(yxPos){return roomSpan*(yxPos[0]-1)+(yxPos[1]-1);}
-    function initRooms(){ dr=roomID(devR); dev=dr>=0; room=(dev?dr:roomID(startRoom));
+    function clearRoom(y,x){roomClear[roomID([y,x])]=true;}
+    function clearRooms(y1,x1,y2,x2){for(y=y1;y<=y2;++y)for(x=x1;x<=x2;++x)clearRoom(y,x);}
+    function setRoom(y,x){room=roomID([y,x]);}
+    function initRooms(){ dr=roomID(devR); dev=dr>0; room=(dev?dr:roomID(startRoom));
       roomClear=Array.from({length:roomCodes.length},()=>false);
       cp=localStorage.getItem('checkpoint'); if(cp&&!dev)loadCheckpoint(cp),outgrowHelp=true; newRoom(); }
     function restart(){ localStorage.removeItem('checkpoint'); got=[]; slotsUsed=0; slots=[-1,-1,-1,-1];
       help=false;outgrowHelp=false; initRooms(); }
-    function warp(k){ restart(),cp=k=='2'?'field':'lightwater',localStorage.setItem('checkpoint',cp)
-      ,loadCheckpoint(cp),newRoom(); }
+    function warp(){restart(),cp='field',localStorage.setItem('checkpoint',cp),loadCheckpoint(cp),newRoom();}
     function loadCheckpoint(cp){ if(!checkpoints.includes(cp))return;
-      function c(y1,x1,y2=y1,x2=x1){for(y=y1;y<=y2;++y)for(x=x1;x<=x2;++x)roomClear[roomID([y,x])]=true;}
-      function r(n,y,x){if(cp!=n)return false;room=roomID([y,x]);return true;}
-      c(17,1,19,3);if(r('intro_jailcell',17,3))return; c(16,1,16,3);if(r('intro_maze',16,3))return;
-      c(14,1,15,3);if(r('intro_overfill',14,1))return; c(11,1,13,3),c(10,2);if(r('intro_blue',10,2))return;
-      c(8,1,10),c(9,2);if(r('intro_omni',8,1))return; c(8,2);if(r('intro_traffic',8,2))return;
-      c(8,3,10);if(r('intro_joiner',8,3))return; c(7,1,7,3);if(r('intro_joinMix',7,2))return;
-      c(6,1,6,2);if(r('intro_splitter',6,2))return; c(5,2);if(r('intro_joinSplit',5,2))return;
-      c(4,1,5),c(4,2);if(r('intro_splitOne',4,2))return; c(4,3,6);if(r('intro_mine',4,3))return;
-      c(1,1,3,8),c(4,4,5,8);if(r('field',5,8))return; c(6,4,6,8),c(7,4);if(r('water_intro',6,7))return;
-      c(7,5,7,8),c(8,6);if(r('water_farm',7,8))return; c(8,7,9,8),c(9,6),c(10,7);if(r('light_intro',9,8))return;
-      c(11,6,11,8),c(10,8);if(r('light_remove',11,6))return; c(11,5);if(r('light_three',11,5))return;
-      c(8,5,10),c(10,6);if(r('light_blue',8,5))return; c(8,4,15),c(12,5,14,8);if(r('lightwater',15,4))return;
-      c(16,4,19),c(15,5,19);if(r('red_intro',15,5))return; c(15,6,15,8);if(r('red_3TierJoin',15,8))return;
-      c(16,7,16,8);if(r('red_3TierSplit',16,7))return; c(16,6,19,6);if(r('red_light',19,6))return;
-      c(17,7,19);if(r('red_water',17,7))return; c(17,8,19);if(r('button_intro',19,8))return;
-      c(20,2,21,8),c(20,1);if(r('button_field',20,1))return; c(22,1,22,8),c(21,1);if(r('journey',22,1))return; }
+      clearRooms(17,1,19,3);if(cp=='intro_jailcell'){setRoom(17,3);return;}
+      clearRooms(16,1,16,3);if(cp=='intro_maze'){setRoom(16,3);return;}
+      clearRooms(14,1,15,3);if(cp=='intro_overfill'){setRoom(14,1);return;}
+      clearRooms(11,1,13,3);clearRoom(10,2);if(cp=='intro_blue'){setRoom(10,2);return;}
+      clearRooms(8,1,10,1);clearRoom(9,2);if(cp=='intro_omni'){setRoom(8,1);return;}
+      clearRoom(8,2);if(cp=='intro_traffic'){setRoom(8,2);return;}
+      clearRooms(8,3,10,3);if(cp=='intro_joiner'){setRoom(8,3);return;}
+      clearRooms(7,1,7,3);if(cp=='intro_joinMix'){setRoom(7,2);return;}
+      clearRooms(6,1,6,2);if(cp=='intro_splitter'){setRoom(6,2);return;}
+      clearRoom(5,2);if(cp=='intro_joinSplit'){setRoom(5,2);return;}
+      clearRooms(4,1,5,1);clearRoom(4,2);if(cp=='intro_splitOne'){setRoom(4,2);return;}
+      clearRooms(4,3,6,3);if(cp=='intro_mine'){setRoom(4,3);return;}
+      clearRooms(1,1,3,8);clearRooms(4,4,5,8);if(cp=='field'){setRoom(5,8);return;}
+      clearRooms(6,4,6,8);clearRoom(7,4);if(cp=='water_intro'){setRoom(6,7);return;}
+      clearRooms(7,5,7,8);clearRoom(8,6);if(cp=='water_farm'){setRoom(7,8);return;}
+      clearRooms(8,7,9,8);clearRoom(9,6);clearRoom(10,7);if(cp=='light_intro'){setRoom(9,8);return;}
+      clearRooms(11,6,11,8);clearRoom(10,8);if(cp=='light_remove'){setRoom(11,6);return;}
+      clearRoom(11,5);if(cp=='light_three'){setRoom(11,5);return;}
+      clearRooms(8,5,10,5);clearRoom(10,6);if(cp=='light_blue'){setRoom(8,5);return;}
+      clearRooms(8,4,15,4);clearRooms(12,5,14,8);if(cp=='lightwater'){setRoom(15,4);return;}
+    }
     checkpoints=["intro_jailcell","intro_maze","intro_overfill","intro_blue","intro_omni","intro_traffic",
       "intro_joiner","intro_joinMix","intro_splitter","intro_joinSplit","intro_splitOne","intro_mine","field",
-      "water_intro,","water_farm","light_intro","light_remove","light_three","light_blue","lightwater","red_intro",
-      "red_3TierJoin","red_3TierSplit","red_light","red_water","button_intro","button_field","journey"];
+      "water_intro,","water_farm","light_intro","light_remove","light_three","light_blue","lightwater"];
 
-    let wl=window.location,wlh=wl.hostname,site="redsquaregame.com";if(wlh!==site&&wlh!="")wl.href="https://"+site;
     document.body.addEventListener('pointerdown',(e)=>{ if(e.button>0)return; e.preventDefault(); stopInput();
       x=e.clientX;y=e.clientY; document.body.setPointerCapture(e.pointerId);
       view=land.getBoundingClientRect(); offLeft=x<view.left,offRight=x>view.right;
       if(offLeft&&restartFlip||offRight&&!restartFlip)restartFlip=!restartFlip,++restartCount;else restartCount=0;
       if(restartCount==20)restart(),restartCount=0;
-      if(offLeft&&myX>0||offRight&&myX<end||y<view.top&&myY>0||y>view.bottom&&myY<end)return; restartCount=0;
+      if(offLeft||offRight||y<view.top||y>view.bottom)return; restartCount=0;
       box=guy.getBoundingClientRect(); clickGuy= x>=box.left&&x<=box.right&&y>=box.top&&y<=box.bottom;
       if(clickGuy&&!outgrowHelp){help=true,dHelp();}
-      input.pointerId=e.pointerId,input.type='p',input.targX=e.clientX,input.targY=e.clientY,input.view=false;
+      input.pointerId=e.pointerId; input.type='p'; input.targX=e.clientX;input.targY=e.clientY;
       beginInput(pStep,360,130); });
     document.body.addEventListener('pointermove',(e)=>{ if(e.pointerType=='mouse'&&e.buttons==0)return;
-      if(e.pointerId!=input.pointerId)return; if(input.view){ dx=e.clientX-input.targX,dy=e.clientY-input.targY;
-        let thresh=0.01*bounds; if(dx*dx+dy*dy<thresh*thresh)return; }
-      input.targX=e.clientX,input.targY=e.clientY,input.view=false; });
+      if(e.pointerId==input.pointerId){input.targX=e.clientX;input.targY=e.clientY;} });
     document.body.addEventListener('pointerup',(e)=>{if(input.type=='p'&&e.pointerId==input.pointerId)stopInput();});
     document.body.addEventListener('pointercancel',(e)=>{
       if(input.type=='p'&&e.pointerId==input.pointerId)stopInput(); });
     document.body.addEventListener('touchstart',(e)=>{e.preventDefault();},{passive:false});
-    window.addEventListener('keydown',(e)=>{ if(e.repeat)return; dx=0;dy=0; const k=e.key;
-      if(k=='ArrowRight'||k=='d'||k=='D')dx=1; if(k=='ArrowLeft'||k=='a'||k=='A')dx=-1;
-      if(k=='ArrowUp'||k=='w'||k=='W')dy=-1; if(k=='ArrowDown'||k=='s'||k=='S')dy=1;
-      if(dx||dy){ stopInput(); input.type='k'; input.key=k; input.dirX=dx;input.dirY=dy;
+    window.addEventListener('keydown',(e)=>{ if(e.repeat)return; dx=0;dy=0;
+      if(e.key=='ArrowRight'||e.key=='d'||e.key=='D')dx=1; if(e.key=='ArrowLeft'||e.key=='a'||e.key=='A')dx=-1;
+      if(e.key=='ArrowUp'||e.key=='w'||e.key=='W')dy=-1; if(e.key=='ArrowDown'||e.key=='s'||e.key=='S')dy=1;
+      if(dx||dy){ stopInput(); input.type='k'; input.key=e.key; input.dirX=dx;input.dirY=dy;
         beginInput(kbStep,240,120); }
-      if(k=='Backspace')++restartCount;else restartCount=0; if(restartCount==10)restart(),restartCount=0;
-      warpKey=(k=='2'||k=='3');if(!warpKey)warpCount=0;else if(++warpCount==10)warp(k),warpCount=0;
-      if(dev){ if(k=='c'&&slotsUsed<4)slots[slotsUsed++]=0,dHands();
-        if(k=='b'&&slotsUsed<4)slots[slotsUsed++]=1,dHands();
-        if(k=='r'&&slotsUsed<4)slots[slotsUsed++]=2,dHands();
-        if(k=='x'&&slotsUsed>0)slots[--slotsUsed]=-1,dHands();
-        if(k==' ')noclip=!noclip;
-      } else{if(k=='0')++unlockDev;else unlockDev=0; if(unlockDev==5)dev=true;} });
+      if(e.key=='Backspace')++restartCount;else restartCount=0; if(restartCount==10)restart(),restartCount=0;
+      if(e.key!='2')warpCount=0;else if(++warpCount==10)warp(),warpCount=0;
+      if(dev){ if(e.key=='c')slotsUsed=4,slots=[0,0,0,0],dHands();
+        if(e.key=='b')slotsUsed=4,slots=[1,1,1,1],dHands(); if(e.key=='r')slotsUsed=4,slots=[2,2,2,2],dHands();
+        if(e.key=='x')slotsUsed=0,slots=[-1,-1,-1,-1],dHands();
+        if(e.key==' ')noclip=!noclip;
+      } else{if(e.key=='0')++unlockDev;else unlockDev=0; if(unlockDev==5)dev=true;} });
     window.addEventListener('keyup',(e)=>{if(input.type=='k'&&input.key==e.key)stopInput();});
     function resize(){ window.scrollTo(0,0); vv=window.visualViewport;
       width=vv?vv.width:document.documentElement.clientWidth;
@@ -296,110 +268,101 @@
       window.visualViewport.addEventListener('scroll',resize); }
 
     restartCount=0,restartFlip=false,unlockDev=0,warpCount=0;
-    input={type:null,key:null,dirX:0,dirY:0,loop:null,targX:0,targY:0,pointerId:null,view:false}; got=[];
+    input={type:null,key:null,dirX:0,dirY:0,delay:null,repeat:null,targX:0,targY:0,pointerId:null}; got=[];
     water=0,waterHistory=Array.from({length:4},()=>({x:-1,y:-1})),waterEl=new Array(4),onDirt=null;
-    buttonLeft=0,buttonMax=1,dButton();
     slotsUsed=0; slots=[-1,-1,-1,-1]; help=false;outgrowHelp=false; noclip=false; resize();
 
     roomSpan=8; roomCodes=[
-    /*1*/"19LT 7rU5WU12R12WdL4WL7D7WrU3WU3R3Wlzw","19T 1dR5WR4S4R8W5uR5WL7Z3xdeeruuR4S4L5dldl",
-      "19T 1dR4WR10WlzWL6xR4zD2lU2lD2xD3","19TR 3Z3WL4dR4dl<ldR4dL4S3D8rU4rdvdrU4rD4S7L8U4lD4lu^ulD4lU4"
-      +"S3U8rD4ru^urD4rU4W2xxrrc0","19TL 7rWU17R17dL16D14seU7Werrc0lqqWuuR5S2R10S2zL5S4L8dS4D8",
-      "19T 1dWR18dL6S4L12dR3S10R15D4lU3lvdL6ersR4S2zzl9wU7lD5q^uluruszL5","11TBL2R2 1xWR8dL8drS2R47eR8uL8u>R4q",
-      "19TRL2B2 1xWR16D164sueR3drrdrrdrrdrrurululululluL3dL4U4R15dL5xR4dllxrD11lU4zD3lU3L5S7L5U3llD6rU5rS3D5rrS5R7"
-      +"uuldlulS4U3eeullullullerxrx4srxW1X3dc0",
-    /*2*/"19L 7rWU66S2L2zuuS3qU3D10S3U3quuS5L6dd<uuS3eU3D10",
-      "19 6U4WL4S2L9zR14dL15dR15dL15dR15S15L15dR4src0R10dL9dR3S2R6S12L13rruL3","19 4U4WD8rU8rD8rU8xD6eU43S4Z3D3zU3zd",
-      "19R 5U3WD3R4D3lxL8elU6rqR8zrddS6L6zrrxdd","19L 7rWrrS2R9S2R6u5S4Q4uD9rU9S5R6D9rU91r",
-      "19R2 9lWS3U7S3U77wurd1S3X3rD2rU2rD2S3R6uL2uR2WL4c0","7TBRL2 5j013zwD4wL4wU4w",
-      "15LR 1rWD14rU14rD14rU5S4U9rddS8D123lD14lU14lD14lU5S4U9lddS8D12",
-    /*3*/"19BL 9qW<<<<<<L4uR3qU81rD15rU13W7E5rrc0","19B 9qW<<<<<<<<","19B1 9qW<<<U3s<<D3<<<",
-      "19BR6 9qW<<slc0l<<<<<6S2D3U6","15 5To>>s<^<^sv<v<s>v>vs^>T7WurdS2R99wlurS2U93wdluS2L91wrdlS2D9",
-      "19 7WeluuS2U9S2U6r3wdq5S2quuD4rU4rD4rU4rD48rrul","19T 3dWD5qU4L17S4R4xR5S4R6dd9wle",
-      "19RBT2 2lzWD7rdlqulluL4uR6uL6uR6uL6uR6S4D5lS4R5urD4ruruR3drD3S2D6qdllS6L10s<<"
-      +"2srxD3xddS2U6R5D6qU4L3D4rrU3lddW6Z3lc0",
-    /*4*/"9LTB2R1 6qwdg0dw5j012dTp1ll","5TBL1R1 1xwrc1rwdg'intro_splitOne'1dwlc1lw",
-      "11RL1T1B2 2zWD4>U4Wlg'intro_mine'0dTg0D3T1xxwR6wD6wL6w","13TLBR2 1xxc0D8c0uqW>rdvS2uueR3>rs^^l<L5"
-      +"<vR9S3Z3drrS7U8llS2llqv","13RL2B2 1R3WR6slzll5sdc0lurrds^erD5L6U5r","19L 7eW^^^^^^^^2rD9rU9W5qquc0",
-      "19R2 3lWdsvddS8D111S6X2R5L4dlddrdrdrddrdrdsU3luulululerrWzc0","11RTL2 1xWr7eu6lqddqqddq3z",
-    /*5*/"9BLR2T2 3zWzL4dR4dL4dR4dL4WquTc1uu","9L2TR 9lW<L4s^g'intro_joinSplit'0rU4l>>D5wquWqj016zTc0uuu",
-      "7 5j01<p1>>p11rWddlddrdd3lddrddldd",
-      "15LBT 3dWD9vdslqllurrull^rrullurr^llurrull<lldrrdllvrrdlldrrvlldrrdll<llurrull^rrullurr^llurrullWqc0",
-      "11BR1T2 1dWD76qL4vR4sdzWU6wL6wD6w9qc0","19BL1 1xWvvvR3svvL3vvvWeeuc0",
-      "19BR 3lD4WD5svD6L5s<L69S3U2qqddll5S4zzL3R4urrururU4sdzdldldlldlsE5W5dzzwE6w",
-      "11B1RL 8lqWqrrqqrrqqrrqs>>zrrzzslg'field'1>rzzrrz",
-    /*6*/"9TLB 5c1qqwD4wR4wU4w","9B1R 1WR5dsrg'intro_splitter'0ru",
-      "15BLRT2 1xWd2S2ddzldzzD3zslc1dsdc1d8erS4L4c1leeueU3S2eerD6xxsrc1dslc16lU3s^u",
-      "13 3WL11zD11rr>R5>rW1T~xrxrxdxddxxdxxT7eW9slqqzluz1sdxrdlD41S2rrxrrdruR31S2X39U5zD3qul",
-      "19TBL6R6 3lD3WlD3lD3lD3ldlulU10lull1sdxur7S2uueurU3ruurU3rurdrD3lD3lddldllddr<useeuuruurU3rd"
-      +"S2zddszd8qrr9q3zL6xD9rU9rD6S2eU5rr7S3U8rD3S2eU3e","13TB 5uTb1uuTuWqrr5wzrrxL4zR6xL8dR8",
-      "13TB2 3dWD88sqlursrg'water_intro'1rrd2dzrrzzrrzW8uL3wR6w",
-      "19T1RB 1dWD11svD31sx>D6s>>U6s>>D6s>>U6x<<<<<<<v>>>>>>>v<<<<<<<4xddR14dL6dR6zL4sqql4sxxR129q7eurdrr",
-    /*7*/"7LTB 5wlc0","9BT1L3 2zwrg'intro_joinMix'1rw8uc0lc1","9B1TR 9qc1uc02zc0lc1","9LRB 1>WR52dzrrzzrrzW3zdc1",
-      "17TB 1D3T~xxR9qL4eR3xxdL8xR7dL7zR8zL7dR6zL4xrrT4xrc01dWR4zL3xrd3dL3xrrdl9U4zzrdL47uR5sqL4urrquzU8xdde",
-      "11T 7Wuxuur9wl2szlR4WzTp1llT5uj01","13T2B 7uWR12sqq^<vxU4S5L6D4q^>v1d3dW8U3c0",
-      "11TRB2 8qlWursrg'water_farm'1rrd2D5q^>vW6llc0",
-    /*8*/"9LTR1 6llg'intro_omni'19lWL5U3rddR4ullurr^llsL3ursR4uL6Wdc1R3c1D4c1",
-      "7TBL1R1 4xWruu>rvlWdTc0lleTeg0rg'intro_traffic'1qqTc1lld",
-      "11L1RT1B3 1xWR3srg'intro_joiner'1R44x6zWzTc0zlS3L3qexeruersuqs<lzz>","13TLR1 5b0qqwD4wR4wU4W3zdq1xde",
-      "9TRL1 4xwug'light_blue'1uw6lqwdc1dw","11LRBT4 5u<Tb0xzxueeddrzqTdc07eW9q","7TLR 2vc0lW>","9T2RL 5qW>svd<",
-    /*9*/"9L 5TovseesqqszzT1xg0rWuR6dsD7L5<","7TRB1 8qWU3>D34uD3W8uc1uTc0uu","9T3LRB3 5j01qqwD4wR4wU4w",
-      "13 1WD4rddrddrddrdd3wD4lddlddlddldd5q>Wq@0d1","11LRT4 5u@1d2dzW>","7LBT 4>c0uWv","9T3L3B3 5l@0r3R3uWv",
-      "9R 7WrrU3rrsrg'light_intro'0rrsdz<1w",
-    /*10*/"7LRB 5c07eW9q3zuL3","5 1rWD4>U4Wzg'intro_blue'0","7LRB 7eWR4WqTp1ll",
-      "15 2<WD4llullD3R4ddL4ddR4D4s>>U4R4uuL4uuR4U3lldllU4W6qq@0d4","11LB1R3 7eewuc1uwU3wuc1uw","9TBRL3 5j019qToU6",
-      "7LRB 8^c0lW>","9LR 1rWrD3rrsec0xrsuq<9llU3llszc0qlsdx>",
-    /*11*/"7TLR2B2 5Tc1d","9L2R2T1 2zWddsrg1ruu","7TRL2B2 5dc1","11 7rWlU4rrquruuruu9wU4luuluuluuW4R5@0l3",
-      "15 2rWD3R6D3sD4L14U7sxc0uR5U3Wxdg'light_three'0D4@0d3L4@0d2R8@0u1","7TBL1R24ewdg'light_remove'0dw8uTorr",
-      "9TBL2R25d@0u2uqW>","9BRL23lWl5v>sqc06ll<luull",
-    /*12*/"7LRBT2 1xw3zw5zTp0>","9LRB1 7ew9qw5zTc0suqsersxx","7LRBT2 1xw3zw5zTp0>","11LB2 3W1r7eW5Tolurrddll",
-      "13TL5 5@0r4llzW^ser>s>xv","13T 2vTb0rTreWddS4L5uu","13T 2L3dWD4e<^>S3R4>v<xU4",
-      "13TR 1rxWrdrurrdrrdrdrddrddlddrddS2U3S3U8L5S2xR3dW6dL4@0r2",
-    /*13*/"7LTB1 5qc1","9BL3T1 1xWrrzrsrg0rurd>D5WllqTc0<suqs>>","9TBR 7uWU5R6D4L4uuW5p1","7LBRT2 5j01",
-      "13L 4rxWldR3s^uL3W4R5@0l4d@0l2","13 5v@2u4U4lW>","17 5E5WD10sqc0dL9U10R8ddsxdL3uuslqD5R4sxdL7U6",
-      "17R 2D7lb0lD4WullU6R6D6lld6lU8llxD4",
-    /*14*/"5LBT1 3zwlg'intro_overfill'0lWdd","7TBL2 5dc0","9RTL3 9qWd<L43zW5uc0",
-      "11B2LT 8qlWuqrrsrg1R3zd2szldzrr>rrqu","13BL5 5rr@0l3zWuululdvdruu","13B 5@0u2dxW<q^e>xv",
-      "17B 7^Wdrr5S4eerr@0d2rdL3S2L6dsr@0u2R6dL5<ddR6s>rU3S2U5L6s<lD3>R5uL5",
-      "17BR 5T~ulddrrU3L3D4R4U5L5D6R6U7L7D7TdWR8U3S2u~x~uqU4L9D9",
-    /*15*/"9TLB 1xW7eWreTc0sreqesqlsdz","9TB 1xxW>>svv<<","9R 9lWS3L71wR4ddruu>ddWlg0","13LRT2B2 8qlWU6qrrsrg2"+
-      "R3zD6e<slg'lightwater'0l<s^u>srg1r>WxTc1dS7L8uT>rTc0>^<TQ3uTc2s>>s>>","9TLR1B2 6zWlsug'red_intro'1ur7eU6",
-      "11TBL1R2 1xToR8T5qTc0rrsdc1llsdc2rrTdWllxd","9TBL2R2 5^j12vvj01",
-      "11TB2L2R 8qlWuqrrsrg'red_3TierJoin'2R3zdW3zzc0",
-    /*16*/"7TLB 9uWll6udL5drszc01sxc0R3","7TB 6dWuuL4ddslc08eu7u^u","7R 9lW<L3^uu^rrdslc0drrsrg'intro_maze'0r",
-      "15T2LR 4ee>c2zWrrzdS5R6uqrrWqc2","7LRB2T2 5lc2","15R2B3TL 5wQ3@1u3R6@1r2D6@1r3L6@1l1<Wl1S2xxR3u3S2zD4svvv",
-      "11L2R3TB 4euWreddsdg'red_3TierSplit'2D3ql8eU3sug0U4WzdTc0D3","9T2BRL3 8uWuqrrWuTc2u<d",
-    /*17*/"5LT 2dc0","5T","5R 1WrrddWrg'intro_jailcell'0","15LRB2 8qlWuqrrsrg2R3zd5sqqllsxc2^uS5R6dxllWxc2",
-      "9T2B3LR 4eWreddseg2edder","9T3B3LR 1xToD63zD65lj01>j12","15LR2 6zdWlzuusug'red_water'2U3xr3ldlqL10dR4szL3drzdW"
-      +"3<T~Z3lzlzzddxdxdxds^b1suqslq","9L2B2TR 5ee,2L4wD4wR4w3zc2",
-    /*18*/"5L","5","5R","7T2B2LR 4rWedd>uuxW<dc2^c2","11B3T3LR 5j12qqwD4wR4wU4wdxp2L6p2","13T3LRB18q<WuqrrWU3"
-      +"@1d2q@2d3q@1d46qqwq@1r1ewD6wvwq@1l2lw","15LR 8rT~uquueuuquueuqusvb0dllxzrddrddlzrdzs>r>ullurU5zuuedreT"
-      +"xxTovovo4seuvvTeej12R8j01","15LRB2T2 5.E4,2L8wD8wR8w",
-    /*19*/"5BL 1xc0xxc0","5B","5BR 6lc0","9T2LBR1 6qwvwug0<Tc0L3Tvp2R3p2","13L1T3BR 5<Wuur<WuTc1u>dS2X3>d<TdWrrzd",
-      "5LBT1R1 6lg'red_light'2lc2eW<ddrr","15L1R 7eWuxzR5urxR5qruW8T~eU3euquuquueuT5xxdc2",
-      "7LRB1T2 7ec2rwrg'button_intro'2rw",
-    /*20*/"11TLB28qlWuqrrsrg'button_field'2R3zd","11T 7w6vWL7U4W6L3d,1","11T 4vw6D3wlwl,12xwdw","11T 4D3wrw"
-      +"5.R3WU3L4WR3d,1","11T 5qlWs>>svvs<<","11T 2dWdxllWq,15.","11T 2vWl>zdsd,1D3l>","11RT1 8qlW^^^s>>vsv,1v",
-    /*21*/"17LRT2 1xW3zS2Z3ullddrrvddl^lddvR3D3L3uus<<ddL3U3R3^uzluurr^lluurrd","11LB 7E3W^^S2>>.vvW<u,1",
-      "11B 5^,1lWurrdS2D4llu","11B <qWsuquulsz,1us<U3rr","11B 5j12vc28q<ToR6","11B 8q,1lW>>","11B 8u,1<WuqrrsR4zd",
-      "11BR 5.zzW^s^,1^s>>vvv",
-    /*22*/"17B1LR2 3zToD5T<uj01^uj129<qWU5L4ddL4seeL4D5eR7uus^eqqqvxs<<e^zzzW5U3Tg0D6<<v>>>^>Tvg'journey'0",
-      "19L2 3WL17dR15s<dL13dR11s<dL9dR6s<zL3d9wL17uR15s<uL13uR11s<uL9uR6s<qL3u",
-      "75TB 1dR8WR5WR12WR7WR9WR3WR18wrw7uR5wrwR11WR4WR11WR17WR12WR61dde3ddq7uux9uuz",
-      "19R2 1WR17dL15s>dR13dL11s>dR9dL6s>xR3d7wR17uL15s>uR13uL11s>uR9uL6s>eR3u",
-      "17TBL2R3 4^rWU5rD4eU3rddruurdrurrsR6dL3dR3ddzuuL3drrzllxlzrxxlqzrdd7s^exldR4S5R10uL3uR3uuzll",
-      "19TBL3R3 1xWR16dL16dR16dL16dR16dzd^L3sL12s>xR4xL3drr9qL16uR16uL16uR16uL16uR16qL7eR4s<ul4s>vrrq","17L3R2TB 4rD4"
-      +"WD3edR3S5R10qrU3S5U10zuL3S5L10xlddW8ej01>uTorrT^qTc0ueqeqeqdldvzrdzdlU5rU3zuqqvD8xs^U5s<uvddvzuu^uu^lvzxdv",
-      "13TRBL2 1xToR7dTlWL6W7eToR7uTlWL6W6^lTp2dvdTdWlldrrdll3zlldrrdllW5j12>eWddW4xxrWU4Wxp1vp1R4p1^p1",
-    /*23*/"3LRB 5}","5","5","5","5","5","5","5",
-    /*24*/"5","5","5","5","5","5","5","5",
-    /*25*/"5","5","5","5","5","5","5","5",
-    /*26*/"5","5","5","5","5","5","5","5",
-    /*27*/"5","5","5","5","5","5","5","5",
-    /*28*/"5","5","5","5","5","5","5","5",
-    /*29*/"5","5","5","5","5","5","5","5",
-    /*30*/"5","5","5","5","5","5","5","5",
-    /*31*/"5","5","5","5","5","5","5","5"];
+    /*1*/"19LT 7rU5WU12R12WdL4WL7D7WrU3WU3R3Wdllw",
+      "19T 1dR5WR4WR5WR3W5L5D2wddrWU3rruuR7WdllWL4ddlldWU3w",
+      "19T 1dR4WR10WdllWL6WdrWR4WdlWD2lU2lD2WdrWD3W",
+      "19TR 3D3L3WL4dR4dlWllWldR4dL4WD4WD4rU4rdWddWdrU4rD4WL8WU4lD4luWuuWulD4lU4WU4WU4rD4ruWuuWurD4rU4W2ddR4c0",
+      "19TL 7rWU17R17dL16D14WruuWU6WuR3c0L3uuWuuR5WR3WR7WdL3WL3WL5WL3dWD5WD3",
+      "19T 1dWR18dL6WL5WL7dR3WR11WR4D4lU3lW9WU7lD5WluwuuWulWurWL6WU4WR6uL2WllwlwddrrwddR3w",
+      "11TBL2R2 1drWR8dL8drWR3wrw7urWR8uL8uWrrWR4Wluw",
+      "19TRL2B2 1drWR16D16W4uurWrrrdrrdrrdrrdrrurululululluL3dL4U4R15dL5WdrWR4dL2WdrWrD11lU4WdlWD3lU3L5Wu"
+        +"L5uuWllD6rU5rWD4WdrrWR6WruuldlulWllU5R4WullullullWurwrwdrwrwdrw4rrdw1D4R3c0",
+    /*2*/"19L 7rWU6W6L3dWuuWlU4WD10WU4lWuuWL6WddWllWuuWrU4WD10",
+      "19 6U4WL4WL3WL6WdlWR14dL15dR15dL15dR15WL15dWR4Wrc0rWR9dL9dR3WR3WR3WL13WrruL3",
+      "19 4U4WD8rU8rD8rU8WdrWD6WruWU4W3L4D4WD3Wluwuwrrwdw",
+      "19R 9U5L5WL8U8R8D7WL4WU6WD3rWrrWL4WllWU3wR6wD6wL6w","19L 7rWrrWR3WR6WR3WR3uW5L4U5WD9rU9WR6WD9rU9W1rw",
+      "19R2 9lwU4WU3WU4WU3W7wuwrwdw1R4D3WD2rU2rD2WR4WR2uL2uR2WL4c0","07TBRL2 5j013dlwD4wL4wU4w",
+      "15RLT2B2 2lldWL4D12R4WU11WlddlD5rddrdL3U10rdWD7wdw2rrdWR4D12L4WU11WrddrD5lddldR3U10ldWD7wdw",
+    /*3*/"19BL 9ulwllwllwllwllwllwllWL4uR3WU3R3c0ddL4WU8W1rWD15rU13","19B 9ulwllwllwllwllwllwllwllwllw",
+      "19B1 8lluWU3WR4WD3Wrrwrrwrrw8uL4wllwllw","19BR6 9ulwllwllwlc0lwllwllwllwllwllw6D3WU6",
+      "15 5ollolloR6orro5uuouuoD6oddouulloR4oU4oL4o7WurdWR3WR6W9WlurWU3WU6W3WdluWL3WL6W1WrdlWD3WD6",
+      "19 7WU3WU3WU6WU3WU3rW3wdwluw7ruw5lU3WD4rU4rD4rU4rD4W8rwuwrwdw","19T 3dWD5WluWU4L17WdR5WR5WR5WrddW9lWru",
+      "19RBT2 2lldWD8WluWulluL4uR6uL6uR6uL6uR6WD5wlwR3ddwdwrrU3WurD4ruruR3drD3WD3WddldllWR3wL10WL3WL4w"
+        +"2rrdWD3WrD3WU6R5D6WulWU4L3D4rrU3lddW6L4D3c0",
+    /*4*/"09LTB2R1 6ulwdg0dw5j012dp1lp1lp1","05TBL1R1 1drwrc1rwdg'intro_splitOne'1dwlc1lw",
+      "11RL1T1B2 2dlWD4WrrWU4Wlg'intro_mine'0dg0dg0dg0dg01ddrrwR6wD6wL6w",
+      "13TLBR2 1ddrrc0D8c0uulwrrWrdWddwuuurWR3WrrwrwU4wlwllWL5WllwddWR9WU3L6wuuwR3dWrrWD8Wll",
+      "13RL2B2 1dwuwR3WR6W5dc0lWurrdWU3rWrD5L6U5rWU3rWrrW","19L 7ruwuuwuuwuuwuuwuuwuuwuuwuuw2rrWD9lU9W5llU3c0",
+      "19R2 3lwdwD3wdwD9WddW1D2R7WL4dlddrdrdrddrdrdWuuWuluulululWurWrrWdlc0",
+      "11RTL2 1drwrw7urwuw6lWL4Wurwddwrrwuuw3dlw",
+    /*5*/"09BLR2T2 3dlwdlWL4dR4dL4dR4dL4Wluuc1uc1uc1",
+      "09L2TR 9lwllWL4Wuug'intro_joinSplit'0rWU4lWrrwrrWD5Wluuwulj016ldc0uc0uc0uc0",
+      "07 5j01llp1R4p11rWddlddrdd3lddrddldd",
+      "15LBT 3dWD9W9uwuwllWllurrullWuuWrrullurrWuuWllurrullWllWlldrrdllWddWrrdlldrrWddWlldrrdllW"
+        +"llWllurrullWuuWrrullurrWuuWllurrullWulc0",
+      "11BR1T2 1dWD7W6ulWL4WddWR4WddlwU6wL6wD6wR7dc0","19BL1 1drwddwddwddWR3WD4WL3WddwddwddwR2U3c0",
+      "19BR 3lD4WD5WD3WD5L5WL3WL5W9U4llWddllW5L5ddWR4urrururU4WddlWdldldlldlWuurrwurwurwurw5D3llwU6R6w",
+      "11B1RL 8lluWU6WR4WD6Wurwllwllwllwuuwrrwrg'field'1rwrrwuuwllwllwllw",
+    /*6*/"09TLB 5c1uullwD4wR4wU4w","09B1R 1WR5dWrg'intro_splitter'03lwdw",
+      "15BLRT2 1drwdw2D3lWldWdlwdlWD3Wdlwlc1dwdc1dw8urwrwL5wrc1uwurwuwurWU3WuurrrWD6Wdrwdrwrc1dwlc16lWU3WU3w",
+      "13 3WL11WdlWD11rrWrrWR5Wrrwrw1~dr~r~dr~r~dr~d~dr~d~d~dr~dr~d~dr~dr~7urw9lluwluwldwlwuwldw1ddrWrdlD4W"
+      +"1R3dWrrdruR3W1D3R3w9uWU4WldWD3Wulwuwlw",
+      "19TBL6R6 3lD3WlD3lD3lD3ldlulU10lullW1ddrwuwrw7U3rWurU3ruurU3rurdrD3lD3lddldllddrWllwuwuurrWuuruurU3rdW"
+      +"D3lwddlw8ulWrrW9ulw3dlWL6WdrWD9rU9rD6WrU3WU3rrW7U4WU4rD3WrU3wuwurw"
+      ,"13TB 5ub1ub1ub1uwulWrrW5wdlWrrWdrWL4WdlWR6WdrWL8dR8W",
+      "13TB2 3dWD8W8ullWurWrg'water_intro'1rWrdW2dWD4Wulwrrwuuwllw8uL3wR6w",
+      "19T1RB 1dWD11WD3WddW1dR3WD6WR4WU6WR4WD6WR4WU6Wrdwllwllwllwllwllwllwllwddwrrwrrwrrwrrwrrwrrwrrwddwllwllwllwllw"
+      +"llwllwllw4rD3WR14dL6dR6WdlWL4Wuullwlw4rddWR13W9ulw7uurWdrW4rdw7uR3wrwullw",
+    /*7*/"07LTB 5wlc0","09BT1L3 2dlwrg'intro_joinMix'1rw8uc0lc1","09B1TR 9ulc1uc02dlc0lc1",
+      "09LRB 1rrWR5W2dWD4Wulwrrwuuwllw3ddlc1",
+      "17TB 1dwdwd~dWD11R5WuL3WlU3W1rD4~dr~r~dr~r~u~r~u~r~u~r~r~r~d~r~d~r~d~d~d~d~l~d~l~d~l~d~dl~l~l~u~l~u~l~"
+      +"u~u~r~u~u~r~u~r~u~r~u~r~d~r~d~r~d~d~l~d~l~d~l~d~d~l~u~l~u~l~ur~u~r~u~r~u~r~d~r~dl~l~d~l~d~7uuR3wulw"
+      +"1drWddruurdWurw1rrD4wdlWddWurwrru~4rrdc03dWddluullWdrw9uWuulddL4WuR3w9U4w",
+      "11T 7WururWddlwd9wlw2dllWR4Wdlp1lp1lp15uj01",
+      "13T2B 7uWR12W7uuR3WU4Wdlwrrwddwllw9uuL3WU4Wdrwllwddwrrw8U3c01dw3dw",
+      "11TRB2 8ullWurWrg'water_farm'1rWrdW2dWD4Wulwrrwuuwllw6llc0",
+    /*8*/"05LTB1R1 9ulwug'intro_omni'1uwlc1lwdc1rc1dlw",
+      "07TBL1R1 4drWruuWlc1uc1rc1rc1rdwrwdg'intro_traffic'1lg0dwrwdlc0lc0lc0ruc0",
+      "11L1RT1B3 1drWR3Wrg'intro_joiner'1rWR3W6ldwldc0ldc0lc04rdwrdc0ruc0rdc0ruc0rc0uc0ruc0rc0uulc0L3c0dlc0dlc0rrc0",
+      "13TLR1 5b0uullwD4wR4wU4w3lddWulW1ddrWurW","09TRL1 4drwug'light_blue'1uw6lluwdc1dw",
+      "11LRBT4 5lldb0rb0db0rc0ub0ub0rdb0db0urb0ulb0llb0ulb0R3b07urw9ulw","07TLR 2ddc0lwrrw","09T2RL 5ulwrrwD3wllw",
+    /*9*/"07LT1 2dlwrg0rw5dc06WD3","09TRB1 1dw7uWU3W8ulWU4Wrc0dc0dc0dc1drWU4","09T3LRB3 5j01uullwD4wR4wU4w",
+      "13 1WD4rddrddrddrddW3WD4lddlddlddlddW5uu@0d1ldwrrw","11LRT4 5u@1d2D2lwrrw","07LBT 4rrc0uwddw",
+      "09 5l@0r3R3uwddw1dWurW3wlw7uWdrW9wlw","09R 7WrrU3rrWrg'light_intro'0rwrwddlwllw1w",
+    /*10*/"09LRBT3 5olloR4o5uuoD4o","05 1rWD48rU4Wdlg'intro_blue'0","07LRB 7ruWR4Wulp1lp1lp1",
+      "15 2llWD4llullD3R4ddL4ddR4D4WR4WU4R4uuL4uuR4U3lldllU4W6lluu@0d4","11LB1R3 7rruuwuc1uwU3wuc1uw",
+      "09TBR 5j019ulououououououo1dw7uw","07LRB 58uulwrc0rw",
+      "09LR 1rWrD3rrWruc0drwrwuulwllw9lWlU3llWldc0ulwlwddrwrrw",
+    /*11*/"07TLR2B2 5c1dc1","09L2R2T1 2dlWddWrg1rWuu","07TRL2B2 5dc1","11 7WU4ruuruuruuW9WU4luuluuluuW4rrdwuR3@0l37rw",
+      "15 3D4WddWddWddL14U7W5u@0d3L4@0d2R8@0u11D3rWR5Wrug'light_three'0rdWR6W2lWddWrrWuuW4rU3c0",
+      "07TBL1R24urwdg'light_remove'0dw18uororo","09TBL2R25d@0u2uulwrrw","09BRL23lwlw5ddwrrwulc06lwlwllWluull",
+    /*12*/"07LRBT2 1rdw3ldw5dlp0rrp0","09LRB1 7ruw9luw5dlc0uulc0rruc0ddrrc0","07LRBT2 1rdw3ldw5dlp0rrp0",
+      "11LB2 3w5olouororododololo7urw1rw","13TL5 5@0r4L3uwddw5uulwrrw5R4uwddw","13T 2ddb0rb0rruWddWL5WuuW",
+      "13T 2dL3WD4Wluwrrwuuwllw2dR3WD4Wluwrrwuuwllw",
+      "13TR 1drrWrdrurrdrrdrdrddrddlddrddWU3wU4WU4L5WR3dWrdW6dL4@0r22dllw",
+    /*13*/"07LTB1 5ulc1","09BL3T1 1drWrrdlWrrg0rwrwuwlw6uuWD5WL3uc0llc0uulc0R4c0","09TBR 7uWU5R6D4L4uuW5p1",
+      "07LBRT2 5j01","13L 4rrdWldR3WU3WL3W4R5@0l4d@0l2","13 5dd@2u4U4lwrrw",
+      "17 5R5U5WD10Wulc0dWL9U10R8ddWrrddWL4uuWlluWD5R4WddrWL7U6","17R 2D7lb0lD4WullU6R6D6lldW3L3WrrD8WlU3WU4",
+    /*14*/"05LBT1 3ldwlg'intro_overfill'0lWdd","07TBL2 5dc0","09RTL3 9ulwdwllWL4W3dlw5uc0",
+      "11B2LT 8ullWuulWrrwrg1rwrrWlddW2dllWddlWrrwrrwrrWluuW","13BL5 5rr@0l3ldWuululdWddWdruu",
+      "13B 5@0d2ddrwllwluwuuwurwrrwrdwddw",
+      "17B 7uuWdrrW5uuR4@0d2rWdL9dWr@0u2rWR5WdlWL4WllWddR5WR4WU3WU3WuuL5WL4WD3WrrWR5uL4",
+      "17BR 5~u~l~d~d~r~r~u~u~u~l~l~l~d~d~d~d~r~r~r~r~u~u~u~u~u~l~l~l~l~l~d~d~d~d~d~d~r~r~r~r~r~r~u~u~u~u~u~u~"
+      +"uWL7D8R7Wr~uWU8L9D10R10uWu~uWU7",
+    /*15*/"09TLB 1drw7urwrruc0luuc0uurc0rrdc0dlc0drc0","09TB 1ddrrwrrwrrw7uurrwrrwrrw",
+      "09R 9lwL4WL31wR4ddruuWrrWddWlg0",
+      "13LRT2B28ullWU7lWrrwrg2rwrrWlD7Wurwllwlg'lightwater'0lwllwU3wrrwrg1rwrrwdllc0llc0uuc0rrc0 8lwrrw"
+      +"2ddc2L4c2R8c24rrddc1dc1R8c1uc1","05","05","05","05",
+    /*16*/"07TLB 9uWllW6uWdL5drWdlc02rdWllWlc0","07TB 6dWuuL4ddWlc08urwuw7uw4wuw",
+      "07R 7WR3Wrrw4dWuuR3Wrg'intro_maze'0rw1WrrdWlc0","03LRB 5Z","05","05","05","05",
+    /*17*/"05LT 2dc0","05T","05R 1WrrddWrg'intro_jailcell'0","05","05","05","05","05",
+    /*18*/"05L","05","05R","05","05","05","05","05",
+    /*19*/"05BL 1drc09ulc0","05B","05BR 6lc0","05","05","05","05","03LRB 5Z"];
     startRoom=[18,2]; devR=[0
                            ,0
     ];initRooms();</script></body></html>
