@@ -84,15 +84,14 @@
       i.type=null,i.key=null,i.dirX=0,i.dirY=0,i.targX=0,i.targY=0,i.pointerId=null; }
     function hitchInput(){if(input.type!='p')return; input.view=true;}
     function kbStep(){tryMove(input.dirX,input.dirY);}
-    function pStep(){ if(input.view) return;
-      box=guy.getBoundingClientRect(); s=box.width; h=s/2; cx=box.left+h;cy=box.top+h;
-      vx=input.targX-cx;vy=input.targY-cy; ax=abs(vx),ay=abs(vy); inCol=ax<=h,inRow=ay<=h; if(inCol&&inRow)return;
-      dx=inCol?0:vx<0?-1:1,dy=inRow?0:vy<0?-1:1; if(myX==0&&dx<0||myX==end&&dx>0)dy=0;
+    function pStep(){ if(input.view)return; box=guy.getBoundingClientRect(),s=box.width,h=s/2,cx=box.left+h
+      ,cy=box.top+h,vx=input.targX-cx,vy=input.targY-cy,ax=abs(vx),ay=abs(vy); inCol=ax<=h,inRow=ay<=h;
+      if(inCol&&inRow)return; dx=inCol?0:vx<0?-1:1,dy=inRow?0:vy<0?-1:1; if(myX==0&&dx<0||myX==end&&dx>0)dy=0;
       if(myY==0&&dy<0||myY==end&&dy>0)dx=0; if(dx==0||dy==0){tryMove(dx,dy);return;}
       ox=obj.find(o=>o.x==myX+dx&&o.y==myY),oy=obj.find(o=>o.x==myX&&o.y==myY+dy);
-      vert=ay>ax;strongBand=h+s/3;strong=(vert?ax:ay)<strongBand&&(vert?ay:ax)>strongBand;
+      vert=ay>ax;strongBand=h+(input.mouse?1:2)*s/3;strong=(vert?ax:ay)<strongBand&&(vert?ay:ax)>strongBand;
       function score(o){ if(!o)return 2; t=o.t; if((t=='w'||t=='g'&&!checkGate(o))&&!noclip)return 0;
-        if(t=='w'&&noclip)return 2; if(t=='~'||t==',')return 2; return 1; }
+        if(t=='w'&&noclip)return 2; if(t=='~'||t=='b'||t==',')return 2; return 1; }
       xScore=score(ox),yScore=score(oy); if(xScore==yScore)vert?++yScore:++xScore;
       if(strong){if(vert&&yScore!=0)yScore=5;if(!vert&&xScore!=0)xScore=5;} xScore>yScore?dy=0:dx=0; tryMove(dx,dy); }
 
@@ -254,18 +253,18 @@
 
     let wl=window.location,wlh=wl.hostname,site="redsquaregame.com";if(wlh!==site&&wlh!="")wl.href="https://"+site;
     document.body.addEventListener('pointerdown',(e)=>{ if(e.button>0)return; e.preventDefault(); stopInput();
-      x=e.clientX;y=e.clientY; document.body.setPointerCapture(e.pointerId);
+      mouse=e.pointerType=='mouse'; x=e.clientX;y=e.clientY; document.body.setPointerCapture(e.pointerId);
       view=land.getBoundingClientRect(); offLeft=x<view.left,offRight=x>view.right;
       if(offLeft&&restartFlip||offRight&&!restartFlip)restartFlip=!restartFlip,++restartCount;else restartCount=0;
       if(restartCount==20)restart(),restartCount=0;
       if(offLeft&&myX>0||offRight&&myX<end||y<view.top&&myY>0||y>view.bottom&&myY<end)return; restartCount=0;
       box=guy.getBoundingClientRect(); clickGuy= x>=box.left&&x<=box.right&&y>=box.top&&y<=box.bottom;
       if(clickGuy&&!outgrowHelp){help=true,dHelp();}
-      input.pointerId=e.pointerId,input.type='p',input.targX=e.clientX,input.targY=e.clientY,input.view=false;
-      beginInput(pStep,360,130); });
+      input.pointerId=e.pointerId,input.type='p',input.targX=e.clientX,input.targY=e.clientY,input.view=false
+      ,input.mouse=mouse; beginInput(pStep,360,130); });
     document.body.addEventListener('pointermove',(e)=>{ if(e.pointerType=='mouse'&&e.buttons==0)return;
       if(e.pointerId!=input.pointerId)return; if(input.view){ dx=e.clientX-input.targX,dy=e.clientY-input.targY;
-        let thresh=0.01*bounds; if(dx*dx+dy*dy<thresh*thresh)return; }
+        let thresh=(input.mouse?.01:.03)*bounds; if(dx*dx+dy*dy<thresh*thresh)return; }
       input.targX=e.clientX,input.targY=e.clientY,input.view=false; });
     document.body.addEventListener('pointerup',(e)=>{if(input.type=='p'&&e.pointerId==input.pointerId)stopInput();});
     document.body.addEventListener('pointercancel',(e)=>{
@@ -296,7 +295,7 @@
       window.visualViewport.addEventListener('scroll',resize); }
 
     restartCount=0,restartFlip=false,unlockDev=0,warpCount=0;
-    input={type:null,key:null,dirX:0,dirY:0,loop:null,targX:0,targY:0,pointerId:null,view:false}; got=[];
+    input={type:null,key:null,dirX:0,dirY:0,loop:null,targX:0,targY:0,pointerId:null,view:false,mouse:false}; got=[];
     water=0,waterHistory=Array.from({length:4},()=>({x:-1,y:-1})),waterEl=new Array(4),onDirt=null;
     buttonLeft=0,buttonMax=1,dButton();
     slotsUsed=0; slots=[-1,-1,-1,-1]; help=false;outgrowHelp=false; noclip=false; resize();
@@ -370,11 +369,11 @@
       "15T2LR 4ee>c2zWrrzdS5R6uqrrWqc2","7LRB2T2 5lc2","15R2B3TL 5wQ3@1u3R6@1r2D6@1r3L6@1l1<Wl1S2xxR3u3S2zD4svvv",
       "11L2R3TB 4euWreddsdg'red_3TierSplit'2D3ql8eU3sug0U4WzdTc0D3","9T2BRL3 8uWuqrrWuTc2u<d",
     /*17*/"5LT 2dc0","5T","5R 1WrrddWrg'intro_jailcell'0","15LRB2 8qlWuqrrsrg2R3zd5sqqllsxc2^uS5R6dxllWxc2",
-      "9T2B3LR 4eWreddseg2edder","9T3B3LR 1xToD63zD65lj01>j12","15LR2 6zdWlzuusug'red_water'2U3xr3ldlqL10dR4szL3drzdW"
+      "9T2B3LR 4eWreddseg2edder","9T3B3LR 1xToD63zD6T5lj01>j12","15LR2 6zdWlzuusug'red_water'2U3xr3ldlqL10dR4szL3drzdW"
       +"3<T~Z3lzlzzddxdxdxds^b1suqslq","9L2B2TR 5ee,2L4wD4wR4w3zc2",
     /*18*/"5L","5","5R","7T2B2LR 4rWedd>uuxW<dc2^c2","11B3T3LR 5j12qqwD4wR4wU4wdxp2L6p2","13T3LRB18q<WuqrrWU3"
       +"@1d2q@2d3q@1d46qqwq@1r1ewD6wvwq@1l2lw","15LR 8rT~uquueuuquueuqusvb0dllxzrddrddlzrdzs>r>ullurU5zuuedreT"
-      +"xxTovovo4seuvvTeej12R8j01","15LRB2T2 5.E4,2L8wD8wR8w",
+      +"xxTovv4seuvvTeej12R8j01","15LRB2T2 5.E4,2L8wD8wR8w",
     /*19*/"5BL 1xc0xxc0","5B","5BR 6lc0","9T2LBR1 6qwvwug0<Tc0L3Tvp2R3p2","13L1T3BR 5<Wuur<WuTc1u>dS2X3>d<TdWrrzd",
       "5LBT1R1 6lg'red_light'2lc2eW<ddrr","15L1R 7eWuxzR5urxR5qruW8T~eU3euquuquueuT5xxdc2",
       "7LRB1T2 7ec2rwrg'button_intro'2rw",
