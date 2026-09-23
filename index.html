@@ -82,7 +82,8 @@
     function beginInput(stepFn,das,arr){input.stepFn=stepFn; startInputTimers(das,arr); stepFn();}
     function stopInput(){ const i=input; cancelAnimationFrame(i.loop),i.loop=null;
       i.type=null,i.key=null,i.dirX=0,i.dirY=0,i.targX=0,i.targY=0,i.pointerId=null; }
-    function hitchInput(){if(input.type!='p')return; input.view=true;}
+    function hitchInput(){ if(input.type!='p')return; input.view=true,cancelAnimationFrame(input.loop)
+      ,startInputTimers(250,130); }
     function kbStep(){tryMove(input.dirX,input.dirY);}
     function pStep(){ if(input.view)return; box=guy.getBoundingClientRect(),s=box.width,h=s/2,cx=box.left+h
       ,cy=box.top+h,vx=input.targX-cx,vy=input.targY-cy,ax=abs(vx),ay=abs(vy); inCol=ax<=h,inRow=ay<=h;
@@ -90,10 +91,12 @@
       if(myY==0&&dy<0||myY==end&&dy>0)dx=0; if(dx==0||dy==0){tryMove(dx,dy);return;}
       ox=obj.find(o=>o.x==myX+dx&&o.y==myY),oy=obj.find(o=>o.x==myX&&o.y==myY+dy);
       vert=ay>ax;strongBand=h+(input.mouse?1:2)*s/3;strong=(vert?ax:ay)<strongBand&&(vert?ay:ax)>strongBand;
-      function score(o){ if(!o)return 2; t=o.t; if((t=='w'||t=='g'&&!checkGate(o))&&!noclip)return 0;
-        if(t=='w'&&noclip)return 2; if(t=='~'||t=='b'||t==',')return 2; return 1; }
-      xScore=score(ox),yScore=score(oy); if(xScore==yScore)vert?++yScore:++xScore;
-      if(strong){if(vert&&yScore!=0)yScore=5;if(!vert&&xScore!=0)xScore=5;} xScore>yScore?dy=0:dx=0; tryMove(dx,dy); }
+      firmBand=h+(input.mouse?2:3)*s/3;firm=(vert?ax:ay)<firmBand&&(vert?ay:ax)>firmBand;
+      function howOpen(o){ if(!o)return 3; t=o.t; if(!noclip&&(t=='w'||t=='g'&&!checkGate(o)))return 0;
+        if(t=='w')return 2;if(t=='c'||t=='j'||t=='@'||t=='.')return 2;if(t=='p'||t=='o'||t=='g')return 1; return 3; }
+      xOpen=howOpen(ox),yOpen=howOpen(oy); if(xOpen==yOpen)vert?++yOpen:++xOpen;
+      if(strong){if(vert&&yOpen>0)yOpen=5;if(!vert&&xOpen>0)xOpen=5;}
+      else if(firm){if(vert&&yOpen>1)yOpen=5;if(!vert&&xOpen>1)xOpen=5;} xOpen>yOpen?dy=0:dx=0; tryMove(dx,dy); }
 
     function checkGate(o){if(slotsUsed<4)return false; for(i=0;i<4;++i)if(slots[i]!=o.st)return false;return true;}
     function blocked(x,y){return obj.some(o=>o.x==x&&o.y==y&&(o.t=='w'||o.t=='g'&&!checkGate(o)));}
