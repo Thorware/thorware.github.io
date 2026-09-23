@@ -16,8 +16,9 @@
       grid-template-columns:repeat(var(--gridDim),1fr); grid-template-rows:repeat(var(--gridDim),1fr); margin:auto;
       container-type:inline-size; }
     #guyAura{width:100%;height:100%; position:relative; container-type:inline-size; grid-area:auto;}
-    .arrow{ display:none; position:absolute; background-color:var(--arrowCol); width:40cqw;height:12cqw; top:50%;left:50%;
-      clip-path:polygon(50% 0%,0 100%, 100% 100%); transform:translate(-50%,-50%) rotate(var(--r)) translateY(-100cqw); }
+    .arrow{ display:none; position:absolute; background-color:var(--arrowCol); width:40cqw;height:12cqw;
+      top:50%;left:50%; clip-path:polygon(50% 0%,0 100%, 100% 100%);
+      transform:translate(-50%,-50%) rotate(var(--r))translateY(-100cqw); }
     .arrow.up{--r:0deg;} .arrow.right{--r:90deg;} .arrow.down{--r:180deg;} .arrow.left{--r:270deg;}
     #guyAura.help .arrow{display:block;}
     #guy{ background-color:var(--guyCol); width:100%;height:100%; position:relative; container-type:inline-size;
@@ -74,14 +75,14 @@
   </div></template>
   <div id="land"></div>
   <script> const {min,max,abs,sign}=Math; function clamp(x,lo,hi){return min(max(x,lo),hi);}
-    function startInputTimers(das,arr){prevTime=performance.now(),isDAS=true;
-      function tick(time){ if(isDAS){ if(time-prevTime>=das)isDAS=false,prevTime=time,input.stepFn();
+    function startInputTimers(das,arr){prevTime=performance.now(),input.isDAS=true;
+      function tick(time){ if(input.isDAS){ if(time-prevTime>=das)input.isDAS=false,prevTime=time,input.stepFn();
           }else{dTime=time-prevTime; if(dTime>=arr)input.stepFn(),prevTime=time-(dTime%arr);}
         if(input.loop!=null)input.loop=requestAnimationFrame(tick); } input.loop=requestAnimationFrame(tick); }
     function beginInput(stepFn,das,arr){input.stepFn=stepFn; startInputTimers(das,arr); stepFn();}
     function stopInput(){ const i=input; cancelAnimationFrame(i.loop),i.loop=null;
       i.type=null,i.key=null,i.dirX=0,i.dirY=0,i.targX=0,i.targY=0,i.pointerId=null; }
-    function hitchInput(){ if(input.type!='p')return; input.view=true,cancelAnimationFrame(input.loop)
+    function hitchInput(){ if(input.type!='p'||input.isDAS)return; input.view=true,cancelAnimationFrame(input.loop)
       ,startInputTimers(250,130); }
     function kbStep(){tryMove(input.dirX,input.dirY);}
     function pStep(){ if(input.view)return; box=guy.getBoundingClientRect(),s=box.width,h=s/2,cx=box.left+h
@@ -302,7 +303,8 @@
     +'--omniCol:#bbb;--stationCol:#bbb;--dirtCol:#422E20;--lightOffCol:#404000';
 
     restartCount=0,restartFlip=false,unlockDev=0,warpCount=0;
-    input={type:null,key:null,dirX:0,dirY:0,loop:null,targX:0,targY:0,pointerId:null,view:false,mouse:false}; got=[];
+    input={ type:null,key:null,dirX:0,dirY:0,loop:null,targX:0,targY:0,pointerId:null,view:false,mouse:false
+      ,isDAS:false }; got=[];
     water=0,waterHistory=Array.from({length:4},()=>({x:-1,y:-1})),waterEl=new Array(4),onDirt=null;
     buttonLeft=0,buttonMax=1,dButton();
     slotsUsed=0; slots=[-1,-1,-1,-1]; help=false;outgrowHelp=false; noclip=false; resize();
