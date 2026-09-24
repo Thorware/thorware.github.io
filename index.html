@@ -267,7 +267,7 @@
       ,input.mouse=mouse; beginInput(pStep,360,130); });
     document.body.addEventListener('pointermove',(e)=>{ if(e.pointerType=='mouse'&&e.buttons==0)return;
       if(e.pointerId!=input.pointerId)return; if(input.view){ dx=e.clientX-input.targX,dy=e.clientY-input.targY;
-        let thresh=(input.mouse?.03:.03)*bounds; if(dx*dx+dy*dy<thresh*thresh)return; }
+        let thresh=(input.mouse?.05:.03)*bounds; if(dx*dx+dy*dy<thresh*thresh)return; }
       input.targX=e.clientX,input.targY=e.clientY,input.view=false; });
     document.body.addEventListener('pointerup',(e)=>{if(input.type=='p'&&e.pointerId==input.pointerId)stopInput();});
     document.body.addEventListener('pointercancel',(e)=>{
