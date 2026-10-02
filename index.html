@@ -327,7 +327,7 @@
     window.addEventListener('resize',resize); if(window.visualViewport){
       window.visualViewport.addEventListener('resize',resize);
       window.visualViewport.addEventListener('scroll',resize); }
-    land.addEventListener('contextmenu',(e)=>{e.preventDefault();});
+    document.addEventListener('contextmenu',(e)=>{e.preventDefault();});
 
     coinCols=['#FF0','#1F26EB','#C50000','#0A710C'],darkCols=['#A6A600','#141999','#800000','#074908'];
     document.documentElement.style.cssText+='--oobCol:#202020;--guyCol:#f00;'
