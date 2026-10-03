@@ -33,7 +33,7 @@
       display:block; }
     .tile{ width:100%;height:100%; position:relative; container-type:inline-size;
       background-color:var(--tileCol); outline:1px solid var(--tileCol); outline-offset:-0.5px }
-    .wall{--tileCol:#444;}
+    .wall{--tileCol:#444; z-index:1;}
     .coin{background-color:var(--coinCol); width:35%;height:35%; display:grid;place-items:center;}
     .colorblind .coin.cbHelp::after{ content:'G'; font-size:calc(35cqw/var(--gridDim)); line-height:1;
       transform:translateY(-5%); }
@@ -91,7 +91,7 @@
       function tick(time){ if(input.isDAS){ if(time-prevTime>=das)input.isDAS=false,prevTime=time,input.stepFn();
           }else{dTime=time-prevTime; if(dTime>=arr)input.stepFn(),prevTime=time-(dTime%arr);}
         if(input.loop!=null)input.loop=requestAnimationFrame(tick); } input.loop=requestAnimationFrame(tick); }
-    function beginInput(stepFn,das,arr){input.stepFn=stepFn; startInputTimers(das,arr); stepFn();}
+    function beginInput(stepFn,das,arr){input.stepFn=stepFn,input.cbSpent=false,startInputTimers(das,arr),stepFn();}
     function stopInput(){ const i=input; cancelAnimationFrame(i.loop),i.loop=null;
       i.type=null,i.key=null,i.dirX=0,i.dirY=0,i.targX=0,i.targY=0,i.pointerId=null; }
     function hitchInput(){ if(input.type!='p'||input.isDAS)return; input.view=true,cancelAnimationFrame(input.loop)
@@ -113,10 +113,11 @@
     function checkGate(o){if(slotsUsed<4)return false; for(i=0;i<4;++i)if(slots[i]!=o.st)return false;return true;}
     function blocked(x,y){return obj.some(o=>o.x==x&&o.y==y&&(o.t=='w'||o.t=='g'&&!checkGate(o)));}
     function colorblindTest(x,y){ if(slotsUsed<4)return; o=obj.find(o=>o.x==x&&o.y==y&&o.t=='g');
-      if(!o)return; if(o.st!=2&&o.st!=3)return; for(i=0;i<4;++i)if(slots[i]!=2&&slots[i]!=3)return;
-      colorblind=!colorblind,dColorblind(),localStorage.setItem('colorblind',colorblind); }
+      if(!o)return; if(o.st!=2&&o.st!=3)return; let nRed=slots.filter(g=>g==2).length
+      ,nGreen=slots.filter(g=>g==3).length; if(nRed==4||nGreen==4||nRed+nGreen<4)return;
+      colorblind=!colorblind,dColorblind(),localStorage.setItem('colorblind',colorblind),input.cbSpent=true; }
     function tryMove(dx,dy){ let tx=myX+dx,ty=myY+dy; if(noclip||!blocked(tx,ty)){move(dx,dy); return true;}
-      colorblindTest(tx,ty); return false; }
+      if(!input.cbSpent)colorblindTest(tx,ty); return false; }
     function removeObj(o){o.el.remove(),o.el=null,obj.splice(obj.indexOf(o),1);}
     function setGot(){got.push({r:room,x,y});}  function setGot(st){got.push({r:room,x,y,st});}
     function getGotIdx(){return got.findIndex(g=>g.r==room&& g.x==x&& g.y==y);}
@@ -147,8 +148,7 @@
           o.got=!o.got, o.el.classList.toggle('full',o.got); }
         else if(t=='o'){ if(o.got){if(slotsUsed==4)continue; takeCoin(o.st),clearGot();}
           else{ if(slotsUsed==0)continue; o.st=slots[--slotsUsed],slots[slotsUsed]=-1,dHands(),setGot(o.st)
-            ,o.el.style='--coinCol:'+coinCols[o.st],o.el.style.gridColumn=x+1,o.el.style.gridRow=y+1
-            ,o.el.classList.toggle('cbHelp',o.st==3); }
+            ,o.el.style='--coinCol:'+coinCols[o.st],grid(o.el,x,y),o.el.classList.toggle('cbHelp',o.st==3); }
           o.got=!o.got,o.el.classList.toggle('full',o.got); }
         else if(t=='j'){ a=slots[0]; if(slotsUsed==4){ if(o.st!=null&&a!=o.st)break; if(slots.some(me=>me!=a))break;
             if(a!=0&&a!=1)break; slotsUsed=1,slots=[a+1,-1,-1,-1],dHands(); break; } if(slotsUsed!=1)break;
@@ -157,7 +157,7 @@
         else if(t=='b'){if(water>0)onDirt=o;}
         else if(t=='@'){ if(roomClear[room])break; gi=getGotIdx(); if(gi!=-1&&got[gi].dx==null)break;
           light=0;for(i=0;i<slotsUsed;++i)if(slots[i]==0)++light; sp=o.spot;
-          s=sp.el.style;sx=clamp(x+dx*light,0,end),sy=clamp(y+dy*light,0,end); s.gridColumn=1+sx,s.gridRow=1+sy;
+          sx=clamp(x+dx*light,0,end),sy=clamp(y+dy*light,0,end),grid(sp.el,sx,sy);
           if(o.coin)removeObj(o.coin),o.coin=null;
           if(sx==o.tx&&sy==o.ty)o.coin=makeFlavor('c','coin',sx,sy,o.st),o.coin.light=o;
           if(gi==-1){if(light>0)got.push({r:room,x,y,dx,dy,dist:light});}else{
@@ -169,24 +169,24 @@
         if(buttonLeft>0&&!buttonFresh)--buttonLeft,dButton(); }
 
     function dGridDim(){document.documentElement.style.setProperty('--gridDim',gridDim);}
-    function dGuyPos(){s=guyAura.style,s.gridColumn=myX+1,s.gridRow=myY+1;}
-    function dHelp(){guyAura.classList.toggle('help',help);}
+    function dGuyPos(){grid(guyAura,myX,myY);}  function dHelp(){guyAura.classList.toggle('help',help);}
     function dHands(){ if(water){ cnt=0;for(i=0;i<slotsUsed;++i)if(slots[i]==1)++cnt;
         if(water>cnt){for(i=cnt;i<water;++i)h=waterHistory[i],h.x=h.y=-1; water=cnt,dWater();} }
       let c=document.querySelectorAll('#hands .slot');
       for(i=0;i<4;++i){ let s=c[i];s.classList.toggle('on',i<slotsUsed);
         if(i<slotsUsed){let st=slots[i];s.style='--coinCol:'+coinCols[st],s.classList.toggle('cbHelp',st==3);} }}
-    function dWater(){ for(i=0;i<4;++i){ s=waterEl[i].style;h=waterHistory[i];
-        if(water>i)s.gridColumn=h.x+1,s.gridRow=h.y+1;else s.gridColumn=s.gridRow=-1; }}
+    function dWater(){ for(i=0;i<4;++i){ el=waterEl[i];h=waterHistory[i]; el.hidden=i>=water||h.x==-1;
+        if(!el.hidden)grid(el,h.x,h.y); }}
     function dButton(){document.documentElement.style.setProperty('--buttonT',buttonLeft/buttonMax);}
     function dColorblind(){land.classList.toggle('colorblind',colorblind);}
 
+    function grid(el,x,y){let s=el.style;s.gridColumn=x+1,s.gridRow=y+1;}
     function makeEl(cName){let el=document.createElement('div');el.className=cName;return el;}
     function makeWalls(c,gap){ end=gridDim-1,mid=end/2,x=0,y=0,dx=0,dy=0;
       if(c=='T')dx=1; else if(c=='L')dy=1; else if(c=='B')y=end,dx=1; else if(c=='R')x=end,dy=1;
       for(i=0;i<=end;++i,x+=dx,y+=dy)if(abs(mid-i)>=gap)makeBasic('w','tile wall',x,y); }
-    function makeGuy(){ for(i=0;i<4;++i)waterEl[i]=makeEl('water'),s=waterEl[i].style,s.gridColumn=s.gridRow=-1
-      ,land.appendChild(waterEl[i]); land.appendChild(guyMold.content.cloneNode(true)); dGuyPos();dHands(); }
+    function makeGuy(){ for(i=0;i<4;++i)waterEl[i]=el=makeEl('water'),el.hidden=true,land.appendChild(el);
+      land.appendChild(guyMold.content.cloneNode(true)); dGuyPos();dHands(); }
     function makePart(name,dad,st){ n=makeEl(name),n.style='--coinCol:'+coinCols[st],dad.appendChild(n);
       return n; }
     function makeJoiner(x,y){ n=makeBasic('j','station',x,y),n.st=st;
@@ -194,11 +194,11 @@
     function makeJoinerOmni(x,y){ el=makeBasic('j','station',x,y).el.appendChild(makeEl('joiner'));
       el.appendChild(makeEl('joinerBand')).classList.toggle('joinerOmni',true);
       el.appendChild(makeEl('joinerSingle')).classList.toggle('joinerOmni',true); }
-    function makeBasic(t,cName,x,y){ el=makeEl(cName);
-      el.style.gridColumn=x+1,el.style.gridRow=y+1,land.appendChild(el); return obj[obj.push({t,x,y,el})-1]; }
+    function makeBasic(t,cName,x,y){ el=makeEl(cName),grid(el,x,y),land.appendChild(el);
+      return obj[obj.push({t,x,y,el})-1]; }
     function makeFlavor(t,cName,x,y,st,dark=0){ el=makeEl(cName); el.style='--coinCol:'+coinCols[st];
       if(dark)el.style.setProperty('--darkCol',darkCols[st]); if(st==3)el.classList.toggle('cbHelp',true);
-      el.style.gridColumn=x+1,el.style.gridRow=y+1,land.appendChild(el); return obj[obj.push({t,st,x,y,el})-1]; }
+      grid(el,x,y),land.appendChild(el); return obj[obj.push({t,st,x,y,el})-1]; }
     function placeWall(){makeBasic('w','tile wall',x,y);}
     function place(){ c=s[p];switch(c){
         case'c':st=+s[++p];if(dirt||cleared||isGot())break;makeFlavor(c,'coin',x,y,st);break;
@@ -336,7 +336,7 @@
 
     restartCount=0,restartFlip=false,unlockDev=0,warpCount=0;
     input={ type:null,key:null,dirX:0,dirY:0,loop:null,targX:0,targY:0,pointerId:null,view:false,mouse:false
-      ,isDAS:false }; got=[],dirtGot=[];
+      ,isDAS:false,cbSpent:false }; got=[],dirtGot=[];
     water=0,waterHistory=Array.from({length:4},()=>({x:-1,y:-1})),waterEl=new Array(4),onDirt=null;
     buttonLeft=0,buttonMax=1,dButton();
     slotsUsed=0; slots=[-1,-1,-1,-1]; help=false;outgrowHelp=false; noclip=false; resize();
@@ -444,23 +444,23 @@
       +"6qllvrrW1xTo3z7e9qT5jo^Tc0uerxdsvvdzlqusvllqus^^uerTec1dc2R3c1L6c1D8c1R6c1L3c2dc1U4c1^c1",
       "7L1R1TB 4eg'four_3TierSplit'2uc1rg0dWddlWdTc2R3Tro^ljo^oro","9L1R1TB 4rg'four_3TierJoin'2dw^w2vjovTc0zxesu"
       +"c2<vsec1xs<d5>w","11L1B1TR 4rg'four_join'2uwvw5jo^>rTc1ls<<lT5vrTc2llT1d>ToR6",
-      "17L 1rWR3dL3drrdlldrdlD47ruW6U3T~lqllzllzzddxdxddzdT4uR4c07E3rw^wxb@1l1<dbc06L3wvwqb@1r1erbc02D3w<wxb@1u1"
+      "17L 1rWR3dL3drrdlldrdlD47ruW6U3T~lqllzllzzddxdxddzdT7E4c07E3rw^wxb@1l1<dbc06L3wvwqb@1r1erbc02D3w<wxb@1u1"
       +"6zTbxc0zusuqzzxxS7L8xzzsqqrueS7U5R3eeqqdlzx",
       "17R 6lU4TboD8TQ3ubjor^bc0D4bc02R3T~zD3zD3zddzllqquuqqqT9<U4Tbxc0U8ldvddvdlU3^U3",
     /*25*/"15T1R1LB 3zzWvlluu<D4R4ddL6U6<D8R8ddL10U106q","11 4uWR10vL10","11 5jo4uWU3R10D3vD3L10U31srvd3slvd7sr^u9"
       +"sl^us<<s<^s^>s>v","9L1R1B1T 6lg0uWv4x^","7L1R1B1T 6lg'four_intro'1uWv",
       "11L1T1BR 2dg1lw>w5jo^>rTc0ls<<lT5vrTc1llT7u>ToR6",
       "17L 2T~dxrxxrerrT5b.qqWuuL3ddW>b,15xxvWuuR3ddWqlb,15zzvWuuL3ddWrb,1>dbc05eeWR3Wd<bc05Q3Tbxc0ldzR3S4D4zulvl>"
-      +"S4R8qleS4U4rl<T7rw1rw","17R 1D3T~rr>ruR6drxD6Z3L3<quqU68<uuT 5ubc1qlWddxrreuuW3zzw9Q3w5xxrc0",
+      +"S4R8qleS4U4rl<T7rw1rw","17R 1D3T~rr>ruR6drxD6Z3L3<quqU68<uuT5ubc1dc0",
     /*26*/"5","5","5","7T1LRB 2xWdlldd>dWrc1","7T1LRB 2xWdlldd>dWrc2","11TLB2R28<uWursrg2rrdW2dToL4D4T5qjo3zzc0",
       "17B1L2 8T~eU3qqueueuererxreT7eWuuxrzR6>1rD3W5R6ubc0vvlbc01X4rbc07E4bc06uL3Tbxc0lddrrdd<ddrr1S3X4ddrdse^uull"
-      +"7S4E4rsu<d","17RB 1D3T~errereT6L5dbc3<<dbc0^^rbc0>>ubc0Q3bc0L6D4bc0<D4bc09qqlbc01xR6Tbxc0R6xL4<llzldlls>"
-      +"R10uL84S3^uR11>rdL5<L3<ldR13dL13dR9>rrdL6<L4zR13dL13dR13szL11T9qwqc0",
+      +"7S4E4rsu<d","17RB 1D3T~rrrerruuT6L5dbc3<<dbc0^^rbc0>>ubc0Q3bc0L6D4bc0<D4bc07E3rbc01xR6Tbxc0R6xL4<lslzldlls>"
+      +"R10uL84S3^uR11>rdL5<L3<ldR13dL13dR9>rrdL6<L4zR13dL13drr>R9zL11T9qwqc0",
     /*27*/"5","5","5","5","5","11T2LRB1 7^rWR3srg'farm'2R4^L3slg3L4Weec3qc3dc2ec2R4xc3lc2ec2","5","5",
     /*28*/"5","5","5","5","5","3LBR 5}","5","5",
     /*29*/"5","5","5","5","5","5","5","5",
     /*30*/"5","5","5","5","5","5","5","5",
     /*31*/"5","5","5","5","5","5","5","5"];
-    startRoom=[18,2]; devR=[0,0
+    startRoom=[18,2]; devR=[24,7
     //],devR=[0,0
     ];initRooms();</script></body></html>
