@@ -76,15 +76,18 @@
     .beltTri[data-type="r"]{clip-path:polygon(90% 50%,10% 0%,10% 100%);}
     .beltTri[data-type="d"]{clip-path:polygon(50% 90%,0% 10%,100% 10%);}
     .beltTri[data-type="l"]{clip-path:polygon(10% 50%,90% 0%,90% 100%);}
-    .beltTri[data-type="x"]{clip-path:none; width:70%;height:70%;}
-    .beltTri[data-type="X"]{ width:70%;height:70%; background:transparent;
+    .beltTri[data-type="g"]{clip-path:none; width:70%;height:70%;}
+    .beltTri[data-type="x"]{ width:70%;height:70%; background:transparent;
       border:calc(6cqw/var(--gridDim)) solid var(--col); }
+    .beltTri[data-type="X"]{ clip-path: polygon(0 0,10% 0,50% 40%,90% 0,100% 0,100% 10%,60% 50%,100% 90%,100% 100%,90% 100%,50% 60%,10% 100%,0 100%,0 90%,40% 50%,0 10%);
+      width:70%;height:70%; }
     .beltTri.off{display:none;}
     .cb .beltTri.cb::after{font-size:calc(35cqw/var(--gridDim));}
     .cb .beltTri.cb[data-type="u"]::after{transform:translateY(16%);}
     .cb .beltTri.cb[data-type="r"]::after{transform:translate(-40%,-6%);}
     .cb .beltTri.cb[data-type="d"]::after{transform:translateY(-28%);}
     .cb .beltTri.cb[data-type="l"]::after{transform:translate(40%,-6%);}
+    .cb .beltTri.cb[data-type="g"]::after{transform:translateY(-5%);}
     .cb .beltTri.cb[data-type="x"]::after{transform:translateY(-5%);}
     .cb .beltTri.cb[data-type="X"]::after{transform:translateY(-5%);}
     .belt{background-color:transparent; border:calc(4cqw/var(--gridDim)) solid var(--c3Col); width:98%;height:98%;}
@@ -140,7 +143,7 @@
     function getGotIdx(){return got.findIndex(g=>g.r==room&& g.x==x&& g.y==y);}
     function getGotIdxAt(x,y){return got.findIndex(g=>g.r==room&& g.x==x&& g.y==y);}
     
-    function isGot(){return -1!=getGotIdx();}
+    function isGot(){return -1!=getGotIdx();}  function isGotAt(x,y){return -1!=getGotIdxAt(x,y);}
     function clearGot(){got.splice(getGotIdx(),1);}  function getGot(){return got[getGotIdx()];}
     function coinCount(st){let c=0;for(let i=0;i<slotsUsed;++i)if(slots[i]==st)++c;return c;}
     
@@ -151,7 +154,8 @@
           if(empty&& !obj.some(g=>g.t=='b'&& g.empty))dirtGot[dirtGot.length-1].final=true,make=1;
           if(!make)advance=1;else{s=roomCodes[room];let t=s[p];place();if(t==',')advance=1;} }
         if(advance&&water){for(i=water-1;i>0;--i)waterHistory[i]=waterHistory[i-1]; waterHistory[0]={x,y};}dWater(); }
-      if(on&&on.t=='G')for(i=0;i<4;++i)on.tris[i].classList.toggle('off',true);
+      if(on&&on.t=='G')for(i=0;i<4;++i){ let tri=on.tris[i]; if(!on.green){tri.classList.toggle('off',true);continue;}
+          tri.dataset.type='g',tri.classList.toggle('off',tri.c!='g'),tri.style.setProperty('--col',darkCols[3]); }
       if(help)help=false,outgrowHelp=true,dHelp(); myX+=dx,myY+=dy,dGuyPos(); edge=false,on=null;
       if(myX<0||dx&&myX==0)edge=true,--room; else if(myY<0||dy&&myY==0)edge=true,room-=roomSpan;
       else if(myX>end||dx&&myX==end)edge=true,++room; else if(myY>end||dy&&myY==end)edge=true,room+=roomSpan;
@@ -188,15 +192,17 @@
           if(buttonLeft==0&&!cleared)for(o of obj)if(o.t==','){
             if(!got.find(g=>g.r==room&&g.x==o.x&&g.y==o.y))makeFlavor('c','coin',o.x,o.y,o.st); }
           buttonFresh=true,buttonMax=5*r,buttonLeft=buttonMax,dButton(); }
-        else if(t=='G'){ if(cleared||isGot())continue; if(slotsUsed==0)continue; if(o.green&&!coinCount(3))continue;
-          on=o; let cracked=true; for(i=0;i<4;++i){ el=o.tris[i],cl=el.classList,cl.toggle('off',i>=slotsUsed);
-            if(i>=slotsUsed){cracked=false;continue;} let c=slots[i],g=c==3;
-            el.style.setProperty('--col',o.green?(g?coinCols[3]:wildcardCol):coinCols[c]);cl.toggle('cb',g);
-            let miss=o.green? g!=(el.c=='g'): c!=el.c-'0'; let absent=false;
-            if(miss&&!o.green){absent=true; for(j=0;j<4;++j)if(c==o.tris[j].c-'0'){absent=false;break;}}
-            el.dataset.type=absent?'X':miss?'x':o.el.dataset.type; if(miss)cracked=false; }
-          if(cracked)setGot(),on=null,o.el.classList.toggle('off',true),setGotSTAt(o.st,o.rx,o.ry)
-          ,makeOmni(o.rx,o.ry); }}
+        else if(t=='G'){ if(cleared||isGot())continue; if(slotsUsed==0)continue; let green=o.green;
+          if(green&&!coinCount(3))continue; on=o; let cracked=true;
+          for(i=0;i<4;++i){ let tri=o.tris[i];cl=tri.classList; let beyond=i>=slotsUsed;
+            if(!green){cl.toggle('off',beyond); if(beyond){cracked=false;continue;}}
+            let c=beyond?-1:slots[i],g=c==3; if(green)cl.toggle('off',!g);
+            tri.style.setProperty('--col',green?coinCols[3]:coinCols[c]); if(!green)cl.toggle('cb',g);
+            let miss=green? g!=(tri.c=='g'): c!=tri.c-'0'; let absent=false;
+            if(miss&&!green){absent=true; for(j=0;j<4;++j)if(c==o.tris[j].c-'0'){absent=false;break;}}
+            let d=o.el.dataset.type; tri.dataset.type=green?d:absent?'X':miss?'x':o.el.dataset.type;
+            if(miss)cracked=false; }
+          if(cracked)setGot(),on=null,o.el.classList.toggle('off',true),makeFlavor('c','coin',o.rx,o.ry,o.st); }}
       if(buttonLeft&&!buttonFresh){ --buttonLeft,dButton(); if(buttonLeft==0){ let cases=obj.filter(g=>g.t==',');
           for(o of cases)for(c of obj)if(c.t=='c'&&c.x==o.x&&c.y==o.y){removeObj(c);break;} }}}
 
@@ -264,11 +270,13 @@
           o.green=green; if(!green)o.el.style.backgroundColor=wildcardCol;
           belt=makeEl('belt'),land.appendChild(belt); if(!green)belt.style.borderColor=wildcardCol;
           let sty=belt.style;sty.gridColumn=bx+1+'/span '+(dx?4:1),sty.gridRow=by+1+'/span '+(dy?4:1);
-          o.tris=new Array(4),tx=x,ty=y;for(i=0;i<4;++i){ tx+=dx,ty+=dy;o.tris[i]=el=makeEl('beltTri')
-            ,el.c=code[i],el.dataset.type=d,grid(el,tx,ty),cl=el.classList,cl.toggle('off',!solved);
-            z=el.c;if(solved){ el.style.setProperty('--col',z=='x'?wildcardCol:z=='g'?coinCols[3]:coinCols[z-'0']);
-              if(z=='g'||z=='3')cl.toggle('cb',true); } land.appendChild(el); }
-          o.rx=tx+dx,o.ry=ty+dy;if(solved)makeOmni(o.rx,o.ry);break;
+          o.tris=new Array(4),tx=x,ty=y;for(i=0;i<4;++i){ tx+=dx,ty+=dy;o.tris[i]=el=makeEl('beltTri');
+            let z=code[i];el.c=z,grid(el,tx,ty); let hide=green&&z!='g'||!green&&!solved;
+            cl=el.classList,cl.toggle('off',hide); el.dataset.type=green&&!solved?'g':d;
+            el.style.setProperty('--col',green?(solved?coinCols[3]:darkCols[3]):coinCols[z-'0']);
+            if(green||z=='3')cl.toggle('cb',true); land.appendChild(el); }
+          o.rx=tx+dx,o.ry=ty+dy; if(solved&&!cleared&&!isGotAt(o.rx,o.ry))makeFlavor('c','coin',o.rx,o.ry,st);
+          break;
         case'}':makeBasic('}','end',x,y).el.textContent='This game is in active development.\nMore to come...';
           break; }}
     function newRoom(dx=0,dy=0){ for(let j=0;j<4;++j)wh=waterHistory[j],wh.x=wh.y=-1;on=null,hitchInput(),obj=[]
@@ -327,12 +335,14 @@
       c(24,5);if(r('four_3TierJoin',24,5))return; c(24,4);if(r('four_3TierSplit',24,4))return;
       c(24,3);if(r('four_colorful',24,3))return; c(24,2),c(23,2,23,4);if(r('farm_intro',23,4))return;
       c(23,5,23,6);if(r('farm_patches',23,6))return; c(23,7,26,8),c(26,6,27);if(r('farm',27,6))return;
-      c(28,5,31,8),c(27,7,27,8),c(29,4),c(31,4);if(r('green_intro',29,4))return; }
+      c(27,7,28),c(28,6);if(r('green_intro',27,7))return; c(27,8,28);if(r('green_spacer',28,8))return;
+      c(29,5,31,8),c(31,4);if(r('green_workout',29,5))return; }
     checkpoints=["intro_jailcell","intro_maze","intro_overfill","intro_blue","intro_omni","intro_traffic",
       "intro_joiner","intro_joinMix","intro_splitter","intro_joinSplit","intro_splitOne","intro_mine","field",
       "water_intro","water_farm","light_intro","light_remove","light_three","light_blue","lightwater","red_intro",
       "red_3TierJoin","red_3TierSplit","red_light","red_water","button_intro","button_field","journey","four_intro",
-      "four_join","four_3TierJoin","four_3TierSplit","four_colorful","farm_intro","farm_patches","farm","green_intro"];
+      "four_join","four_3TierJoin","four_3TierSplit","four_colorful","farm_intro","farm_patches","farm","green_intro",
+      "green_spacer","green_workout"];
 
     let wl=window.location,wlh=wl.hostname,site="redsquaregame.com";if(wlh!==site&&wlh!="")wl.href="https://"+site;
     document.body.addEventListener('pointerdown',(e)=>{ if(e.button>1)return; e.preventDefault(); stopInput();
@@ -507,19 +517,30 @@
       +"7S4E4rsu<d","17RB 1D3T~rrrerruuT6L5dbc3<<dbc0^^rbc0>>ubc0Q3bc0L6D4bc0<D4bc07E3rbc01xR6Tbxc0R6xL4<lslzldlls>"
       +"R10uL84S3^uR11>rdL5<L3<ldR13dL13dR9>rrdL6<L4zR13dL13drr>R9zL11T9qwqc0",
 //#endregion
-    /*27*/"5","5","5","5","5",
-      "11T2LRB2 7^eWR3srg'farm'2R4^L3slg3L4Weec3qc3dc2ec2R4xc3lc2ec2","7TLBR2 5c3","11TRL2 5v>G3uxxgx<c2uToU3",
-    /*28*/"5","5","5","3TLR 5}",
-      "13TLB 6^WL11dR11dL11dR11dL11W1xwdc3dw7ewuc3uw","13T2B2 5vG1ugggg4^WD4rU4rD46^D4lU4lD4",
-      "13TRB 4^WR11dL11dR11dL11dR11W3zwdc3dw9qwuc3uw","11LR 5vlG3uxgxx>c1uToU3",
-    /*29*/"5","5","5",
-      "9 6dWdL8U4R3qur>rdzR3dW2vg'green_intro'0","11L1B1TR 4xwug3uw5vG3uxxxgr^c1",
-      "11LR1BT2 6qwdg0dw5jo7eep3U6p3R6p3D6p3","11TBL1R2 5vlG3ugxxx6^lWldsdg3ddr","11RL2B2 8<uWursrg3rrdW5uc0",
+    /*27*/"5","5","5","5","5","11T2LRB2 7^eWR3srg'farm'2R4^L3slg3L4Weec3qc3dc2ec2R4xc3lc2ec2",
+      "11B1R1TL 6qwdg'green_intro'3dw8qWuR4WxTc3uuT5dG3ugxxx7ep31xp3",
+      "11L1B1TR 8qWu>dWlg3ug09qToU8T5xrG0uggggzW^U44erD4WzTc0rrT1xrTc3rdlT",
+    /*28*/"5","5","5","5","3TLR 5}",
+      "13T2R1LB 6qwdg3dw5dG3ugggx1xxc33zzc38uc3",
+      "13L1T1RB 2zwrg3rw 4>rvdG3uggxx5vdG3ugggx6<lvdG3ugxxx1xxc3",
+      "13T1B1LR 8qWu>dWlg'green_spacer'0ug35vG3uxggx1xToD33zD3T7eTc0urdT9qTc3uzT",
+    /*29*/"5","5","5","5",
+      "5LR 7rWU4>D4W5ug'green_workout'0",
+      "13R1B1TL 8qwrg0rw1x>rToR4T5lU2G0dxgxgD5>G0ugxgx9qc31xc07ec0",
+      "11R1L1TB 4ewdg0dw5^G0dxxxg7eTc0uuT3zo9qo",
+      "13T1L1RB 4ewdg0dwX2dG0ugxxx>G0uxgxx>G0uxxgx>G0uxxxg2D3lo>o3zzc3",
     /*30*/"5","5","5","5",
-      "9LT1R3 2zwrg1rw5lToldr>rul","7TBR1 5qjo","11TL1 5qTodd>uuT4xwug2uw5,29w","11T2R 5vdG2ugxgx7w",
+      "11B1T1LR 5vG3uxxxg4rc12zwrg3rw",
+      "13R1T1LB 6qwdg0dw5>^G0lxgggvvG0lggxg^L5G0rgxgg1xc33zc08u<lToR6T",
+      "9L1R1TB 6qwdg3dwlc0uc1uc25vG3uxxxg",
+      "13L1TR 5v<G2ugxxg>>G2uxggg",
     /*31*/"5","5","5",
-      "9 5>G1lggxg3dWL8D6R8","9BL3R3 5^<G0dggxx>G0dxggx>G0dxxgg","9 5<G1rgxgg1dWR8D6L8",
-      "13RLT5 4>@3r1ewvw6<.<<,37rWrrexrrexrrW<lT~qqzzTeeubc3","11RBL 5^G2dxgxg"];
-    startRoom=[18,2]; devR=[29,4
+      "11R3TLB 1xG0dxggg>G0dgxgg>G0dggxgrWD5<U5<D5vl>R3W7eG1rxggx",
+      "13R3L3T1B 2zwrg1rw5eTo>vvs^<<<vs^^>T8^jo",
+      "11L3R1TB 5eeuG0lxgxxL5dG0dxxgxD5rG0rxgxxR5uG0uxxgx",
+      "13L1TB 4ewdg2dw5,2qTo^>vvv<^T",
+      "13 1w7WR7exR3U3qeU7W8>T~E4T<<bc36qq@3l1qwvw8^l.5,3"
+  ];
+    startRoom=[18,2]; devR=[29,5
     ],devR=[0,0
     ];initRooms();</script></body></html>
